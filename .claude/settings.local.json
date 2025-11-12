@@ -26,7 +26,8 @@
       "Bash(npm install --save-dev @types/jsonwebtoken --legacy-peer-deps)",
       "Bash(cat package.json)",
       "Bash(del \"BACKEND_IMPLEMENTATION_SUMMARY.md\" \"BACKEND_SETUP.md\" \"FRONTEND_AUTH_IMPLEMENTATION.md\" \"LOGIN_UPDATE_SUMMARY.md\" \"MULTI_ORG_MIGRATION_GUIDE.md\" \"ORGANIZATION_BACKEND_INTEGRATION.md\" \"QUICK_START.md\" \"install-backend-deps.bat\" \"install-deps-simple.bat\")",
-      "Bash(chmod +x scripts/setup-ec2.sh)"
+      "Bash(chmod +x scripts/setup-ec2.sh)",
+      "Bash(git add .github/workflows/deploy.yml)"
     ],
     "deny": [],
     "ask": []
