@@ -224,7 +224,7 @@ pnpm build
 ### Environment Variables Not Loading
 - Restart development server
 - Check variable names match
-- Ensure .env.local exists
+- Ensure .env.local exist
 
 ## Resources
 
