@@ -131,7 +131,7 @@ jobs:
             echo "🎉 Deployment completed at $(date)"
 
       - name: Notify deployment status
-        if: always() && secrets.SLACK_WEBHOOK != ''
+        if: false  # Disabled - optional Slack notifications (set to 'always()' and configure SLACK_WEBHOOK secret to enable)
         uses: 8398a7/action-slack@v3
         with:
           status: ${{ job.status }}
