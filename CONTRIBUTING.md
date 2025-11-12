@@ -1,4 +1,4 @@
-# Contributing to Work Management System
+# Contributing to AI powered Work Manager
 
 Thank you for considering contributing to this project! This document provides guidelines and instructions for contributing.
 
@@ -15,7 +15,7 @@ Thank you for considering contributing to this project! This document provides g
 1. **Fork and Clone**
    ```bash
    git clone <your-fork-url>
-   cd "Work Managment 3"
+   cd "AI powered Work Manager"
    ```
 
 2. **Install Dependencies**

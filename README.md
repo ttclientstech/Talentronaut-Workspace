@@ -1,6 +1,6 @@
-# Work Management System
+# AI powered Work Manager
 
-A modern, full-stack work management application built with Next.js 16, TypeScript, MongoDB, and AI-powered task assignment.
+A modern, full-stack AI powered Work Manager application built with Next.js 16, TypeScript, MongoDB, and AI-powered task assignment.
 
 ## Features
 
@@ -46,7 +46,7 @@ A modern, full-stack work management application built with Next.js 16, TypeScri
 
 ```bash
 git clone <repository-url>
-cd "Work Managment 3"
+cd "AI powered Work Manager"
 ```
 
 ### 2. Install Dependencies

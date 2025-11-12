@@ -1,6 +1,6 @@
 # Deployment Guide
 
-This guide covers deploying the Work Management System to production environments.
+This guide covers deploying the AI powered Work Manager to production environments.
 
 ## Pre-Deployment Checklist
 
@@ -167,7 +167,7 @@ For more control, deploy to AWS using EC2 or Elastic Beanstalk.
 3. **Clone and Build**
    ```bash
    git clone <your-repo>
-   cd "Work Managment 3"
+   cd "AI powered Work Manager"
    pnpm install
    pnpm build
    ```

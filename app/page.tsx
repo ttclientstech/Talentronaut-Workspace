@@ -44,7 +44,7 @@ export default function Home() {
     <div className="flex h-screen bg-background items-center justify-center">
       <div className="text-center">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <h1 className="text-2xl font-bold mb-4">Work Management</h1>
+        <h1 className="text-2xl font-bold mb-4">AI powered Work Manager</h1>
         <p className="text-muted-foreground">Loading...</p>
       </div>
     </div>
