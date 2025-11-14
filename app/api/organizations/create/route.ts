@@ -129,9 +129,10 @@ export async function POST(request: NextRequest) {
     )
 
     // Update token cookie
+    // Note: secure flag is disabled to work with HTTP (enable after setting up HTTPS)
     response.cookies.set("token", newToken, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: false, // Set to true after configuring HTTPS/SSL
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",

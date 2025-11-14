@@ -27,7 +27,10 @@
       "Bash(cat package.json)",
       "Bash(del \"BACKEND_IMPLEMENTATION_SUMMARY.md\" \"BACKEND_SETUP.md\" \"FRONTEND_AUTH_IMPLEMENTATION.md\" \"LOGIN_UPDATE_SUMMARY.md\" \"MULTI_ORG_MIGRATION_GUIDE.md\" \"ORGANIZATION_BACKEND_INTEGRATION.md\" \"QUICK_START.md\" \"install-backend-deps.bat\" \"install-deps-simple.bat\")",
       "Bash(chmod +x scripts/setup-ec2.sh)",
-      "Bash(git add .github/workflows/deploy.yml)"
+      "Bash(git add .github/workflows/deploy.yml)",
+      "Bash(git add -A)",
+      "Bash(git commit -m \"fix: implement Create Organization modal and fix cookie security\n\nCOOKIE FIXES:\n- Disable secure flag in login, signup, and create organization routes\n- Fixes logout on every refresh issue (cookies now work on HTTP)\n- Will re-enable after SSL/HTTPS setup\n\nCREATE ORGANIZATION FEATURE:\n- Add Create Organization modal in organization switcher\n- Auto-generate handle from organization name\n- Clean UI matching Join Organization modal style\n- Automatically switch to new organization after creation\n- Real-time handle generation (removes special chars, converts to kebab-case)\n\nFEATURES:\n- Organization name input\n- Auto-generated handle (editable)\n- Create button with loading state\n- Automatic organization switch after creation\n- Add database diagnostic script for troubleshooting\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
+      "Bash(git push origin main)"
     ],
     "deny": [],
     "ask": []

@@ -24,8 +24,12 @@ export default function OrganizationSwitcher() {
   const [copied, setCopied] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false)
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [joinCode, setJoinCode] = useState("")
   const [isJoining, setIsJoining] = useState(false)
+  const [orgName, setOrgName] = useState("")
+  const [orgHandle, setOrgHandle] = useState("")
+  const [isCreating, setIsCreating] = useState(false)
   const [userOrganizations, setUserOrganizations] = useState<Organization[]>([])
   const [isLoadingOrgs, setIsLoadingOrgs] = useState(false)
 
@@ -67,7 +71,70 @@ export default function OrganizationSwitcher() {
   }
 
   const handleCreateOrganization = () => {
-    router.push("/create-organization")
+    setIsCreateModalOpen(true)
+    setIsSettingsOpen(false)
+  }
+
+  const handleOrgNameChange = (name: string) => {
+    setOrgName(name)
+    // Auto-generate handle from name
+    const handle = name
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .replace(/-+/g, "-") // Replace multiple hyphens with single
+      .replace(/^-|-$/g, "") // Remove leading/trailing hyphens
+    setOrgHandle(handle)
+  }
+
+  const handleCreateWithName = async () => {
+    if (!orgName.trim() || !orgHandle.trim()) {
+      alert("Please enter an organization name")
+      return
+    }
+
+    try {
+      setIsCreating(true)
+      const token = localStorage.getItem("token")
+      const response = await fetch("/api/organizations/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({ name: orgName.trim(), handle: orgHandle.trim() }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // Update token if provided
+        if (data.token) {
+          localStorage.setItem("token", data.token)
+        }
+
+        // Update user data
+        await refreshUser()
+        await refreshOrganization()
+
+        // Reset form
+        setOrgName("")
+        setOrgHandle("")
+        setIsCreateModalOpen(false)
+
+        // Show success and reload to switch to new org
+        alert("Organization created successfully! Switching to your new organization...")
+        window.location.reload()
+      } else {
+        alert(data.error || "Failed to create organization")
+      }
+    } catch (error) {
+      console.error("Error creating organization:", error)
+      alert("Failed to create organization")
+    } finally {
+      setIsCreating(false)
+    }
   }
 
   const handleJoinOrganization = () => {
@@ -364,6 +431,67 @@ export default function OrganizationSwitcher() {
               </Button>
               <Button onClick={handleJoinWithCode} className="flex-1" disabled={isJoining || !joinCode.trim()}>
                 {isJoining ? "Joining..." : "Join Organization"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Organization Modal */}
+      <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Organization</DialogTitle>
+            <DialogDescription>Enter your organization name. The handle will be generated automatically.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="org-name" className="text-sm font-medium mb-2 block">
+                Organization Name
+              </label>
+              <Input
+                id="org-name"
+                placeholder="e.g., Acme Corporation"
+                value={orgName}
+                onChange={(e) => handleOrgNameChange(e.target.value)}
+                className="w-full"
+                disabled={isCreating}
+              />
+            </div>
+
+            <div>
+              <label htmlFor="org-handle" className="text-sm font-medium mb-2 block">
+                Handle
+              </label>
+              <Input
+                id="org-handle"
+                placeholder="e.g., acme-corporation"
+                value={orgHandle}
+                onChange={(e) => setOrgHandle(e.target.value)}
+                className="w-full"
+                disabled={isCreating}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                This will be your organization&apos;s unique identifier
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  setIsCreateModalOpen(false)
+                  setOrgName("")
+                  setOrgHandle("")
+                }}
+                variant="outline"
+                className="flex-1"
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleCreateWithName} className="flex-1" disabled={isCreating || !orgName.trim()}>
+                {isCreating ? "Creating..." : "Create Organization"}
               </Button>
             </div>
           </div>
