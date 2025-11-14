@@ -20,9 +20,12 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("organizationId")
-    if (!currentUser || !currentUser.organizationId) {
+    // Get current user's organization from database (not JWT)
+    // Use currentOrganizationId (new field) or fallback to organizationId (deprecated)
+    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId")
+    const userOrgId = currentUser?.currentOrganizationId || currentUser?.organizationId
+
+    if (!currentUser || !userOrgId) {
       return NextResponse.json(
         {
           success: false,
@@ -34,7 +37,7 @@ export async function GET(request: NextRequest) {
 
     // Get pending requests for the organization
     const pendingRequests = await MemberRequest.find({
-      organizationId: currentUser.organizationId,
+      organizationId: userOrgId,
       status: "pending",
     })
       .populate("userId", "name email profilePicture")

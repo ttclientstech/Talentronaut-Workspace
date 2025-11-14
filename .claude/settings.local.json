@@ -30,7 +30,8 @@
       "Bash(git add .github/workflows/deploy.yml)",
       "Bash(git add -A)",
       "Bash(git commit -m \"fix: implement Create Organization modal and fix cookie security\n\nCOOKIE FIXES:\n- Disable secure flag in login, signup, and create organization routes\n- Fixes logout on every refresh issue (cookies now work on HTTP)\n- Will re-enable after SSL/HTTPS setup\n\nCREATE ORGANIZATION FEATURE:\n- Add Create Organization modal in organization switcher\n- Auto-generate handle from organization name\n- Clean UI matching Join Organization modal style\n- Automatically switch to new organization after creation\n- Real-time handle generation (removes special chars, converts to kebab-case)\n\nFEATURES:\n- Organization name input\n- Auto-generated handle (editable)\n- Create button with loading state\n- Automatic organization switch after creation\n- Add database diagnostic script for troubleshooting\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")",
-      "Bash(git push origin main)"
+      "Bash(git push origin main)",
+      "Bash(git commit -m \"fix: add diagnostic and fix scripts for multi-org admin visibility\n\nDIAGNOSTIC TOOLS:\n- scripts/test-pending-api.js - Test pending requests API logic\n- scripts/fix-arom-admin-role.js - Fix admin role inconsistencies\n- scripts/debug-org-requests.js - Debug organization request visibility\n- scripts/fix-org-data.js - Auto-fix organization data issues\n\nFIXES INCLUDED:\n- Update organization stats API to use currentOrganizationId\n- Fix member requests API for multi-org support\n- Ensure all admins see pending requests\n\nPRODUCTION DEPLOYMENT:\nThese scripts must be run on EC2 to fix the database\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\")"
     ],
     "deny": [],
     "ask": []

@@ -19,9 +19,11 @@ export async function GET(request: NextRequest) {
 
     // Get the user's current organization from the database (not from JWT)
     // This ensures we always have the latest organization after switching
-    const currentUser = await User.findById(auth.user.userId).select("organizationId")
+    // Use currentOrganizationId (new field) or fallback to organizationId (deprecated)
+    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId")
+    const userOrgId = currentUser?.currentOrganizationId || currentUser?.organizationId
 
-    if (!currentUser || !currentUser.organizationId) {
+    if (!currentUser || !userOrgId) {
       return NextResponse.json(
         {
           success: false,
@@ -32,7 +34,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get organization with member count
-    const organization = await Organization.findById(currentUser.organizationId)
+    const organization = await Organization.findById(userOrgId)
 
     if (!organization) {
       return NextResponse.json(
@@ -45,8 +47,12 @@ export async function GET(request: NextRequest) {
     }
 
     // Get detailed member information
+    // Find users where either organizationId or currentOrganizationId matches
     const members = await User.find({
-      organizationId: organization._id,
+      $or: [
+        { organizationId: organization._id },
+        { currentOrganizationId: organization._id }
+      ]
     }).select("name email role skills profilePicture")
 
     // Get project statistics

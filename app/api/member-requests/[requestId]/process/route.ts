@@ -21,9 +21,12 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
     await connectDB()
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("organizationId")
-    if (!currentUser || !currentUser.organizationId) {
+    // Get current user's organization from database (not JWT)
+    // Use currentOrganizationId (new field) or fallback to organizationId (deprecated)
+    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId")
+    const userOrgId = currentUser?.currentOrganizationId || currentUser?.organizationId
+
+    if (!currentUser || !userOrgId) {
       return NextResponse.json(
         {
           success: false,
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     }
 
     // Verify admin belongs to the same organization
-    if (memberRequest.organizationId.toString() !== currentUser.organizationId.toString()) {
+    if (memberRequest.organizationId.toString() !== userOrgId.toString()) {
       return forbiddenResponse("You can only process requests for your organization")
     }
 
