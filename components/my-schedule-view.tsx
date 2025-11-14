@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Clock, Save, Loader2 } from "lucide-react"
+import { Calendar, Clock, Loader2, Edit, Trash2, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -31,6 +31,8 @@ export default function MyScheduleView() {
   })
 
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([])
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null)
+  const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null)
 
   const days = [
     { key: "monday", label: "Monday" },
@@ -74,17 +76,22 @@ export default function MyScheduleView() {
     fetchSchedule()
   }, [user])
 
-  const handleWorkingHoursChange = (day: string, field: string, value: string | boolean) => {
-    setWorkingHours((prev) => ({
-      ...prev,
+  const handleWorkingHoursChange = async (day: string, field: string, value: string | boolean) => {
+    const updatedHours = {
+      ...workingHours,
       [day]: {
-        ...prev[day as keyof typeof prev],
+        ...workingHours[day as keyof typeof workingHours],
         [field]: value,
       },
-    }))
+    }
+    setWorkingHours(updatedHours)
+
+    // Auto-save
+    await saveSchedule(updatedHours, timeBlocks)
   }
 
-  const handleSave = async () => {
+  // Auto-save function
+  const saveSchedule = async (hours: typeof workingHours, blocks: TimeBlock[]) => {
     try {
       setIsSaving(true)
       const token = localStorage.getItem("token")
@@ -95,21 +102,50 @@ export default function MyScheduleView() {
           Authorization: `Bearer ${token}`,
         },
         credentials: "include",
-        body: JSON.stringify({ workingHours, timeBlocks }),
+        body: JSON.stringify({ workingHours: hours, timeBlocks: blocks }),
       })
 
       const data = await response.json()
 
-      if (data.success) {
-        alert("Schedule saved successfully! AI will use this information for task assignments.")
-      } else {
-        alert(data.error || "Failed to save schedule")
+      if (!data.success) {
+        console.error("Failed to save schedule:", data.error)
       }
     } catch (error) {
       console.error("Error saving schedule:", error)
-      alert("Failed to save schedule")
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handleEditBlock = (block: TimeBlock) => {
+    setEditingBlockId(block.id)
+    setEditingBlock({ ...block })
+  }
+
+  const handleSaveBlock = async () => {
+    if (editingBlock) {
+      const updatedBlocks = timeBlocks.map((b) => (b.id === editingBlock.id ? editingBlock : b))
+      setTimeBlocks(updatedBlocks)
+      setEditingBlockId(null)
+      setEditingBlock(null)
+
+      // Auto-save
+      await saveSchedule(workingHours, updatedBlocks)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setEditingBlockId(null)
+    setEditingBlock(null)
+  }
+
+  const handleDeleteBlock = async (blockId: string) => {
+    if (confirm("Are you sure you want to delete this blocked time?")) {
+      const updatedBlocks = timeBlocks.filter((b) => b.id !== blockId)
+      setTimeBlocks(updatedBlocks)
+
+      // Auto-save
+      await saveSchedule(workingHours, updatedBlocks)
     }
   }
 
@@ -201,20 +237,85 @@ export default function MyScheduleView() {
             <div className="space-y-4">
               {timeBlocks.length > 0 ? (
                 timeBlocks.map((block) => (
-                  <div key={block.id} className="flex items-center gap-4 p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <p className="font-medium text-foreground">{block.title}</p>
-                      <p className="text-sm text-muted-foreground capitalize">
-                        {block.day} • {block.startTime} - {block.endTime}
-                      </p>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setTimeBlocks((prev) => prev.filter((b) => b.id !== block.id))}
-                    >
-                      Remove
-                    </Button>
+                  <div key={block.id} className="p-4 border rounded-lg">
+                    {editingBlockId === block.id && editingBlock ? (
+                      // Edit mode
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium mb-1 block">Title</label>
+                          <Input
+                            value={editingBlock.title}
+                            onChange={(e) => setEditingBlock({ ...editingBlock, title: e.target.value })}
+                            placeholder="e.g., Lunch Break, Meeting"
+                            className="w-full"
+                          />
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                          <div>
+                            <label className="text-sm font-medium mb-1 block">Day</label>
+                            <select
+                              value={editingBlock.day}
+                              onChange={(e) => setEditingBlock({ ...editingBlock, day: e.target.value })}
+                              className="w-full border rounded-md p-2 bg-background"
+                            >
+                              {days.map((day) => (
+                                <option key={day.key} value={day.key}>
+                                  {day.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-1 block">Start Time</label>
+                            <Input
+                              type="time"
+                              value={editingBlock.startTime}
+                              onChange={(e) => setEditingBlock({ ...editingBlock, startTime: e.target.value })}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium mb-1 block">End Time</label>
+                            <Input
+                              type="time"
+                              value={editingBlock.endTime}
+                              onChange={(e) => setEditingBlock({ ...editingBlock, endTime: e.target.value })}
+                              className="w-full"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <Button variant="outline" size="sm" onClick={handleCancelEdit}>
+                            <X className="w-4 h-4 mr-1" />
+                            Cancel
+                          </Button>
+                          <Button size="sm" onClick={handleSaveBlock}>
+                            <Check className="w-4 h-4 mr-1" />
+                            Save
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View mode
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <p className="font-medium text-foreground">{block.title}</p>
+                          <p className="text-sm text-muted-foreground capitalize">
+                            {block.day} • {block.startTime} - {block.endTime}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => handleEditBlock(block)}>
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => handleDeleteBlock(block.id)}>
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))
               ) : (
@@ -225,7 +326,7 @@ export default function MyScheduleView() {
               <Button
                 variant="outline"
                 className="w-full"
-                onClick={() => {
+                onClick={async () => {
                   const newBlock: TimeBlock = {
                     id: Date.now().toString(),
                     title: "New Blocked Time",
@@ -234,7 +335,11 @@ export default function MyScheduleView() {
                     endTime: "11:00",
                     type: "blocked",
                   }
-                  setTimeBlocks((prev) => [...prev, newBlock])
+                  const updatedBlocks = [...timeBlocks, newBlock]
+                  setTimeBlocks(updatedBlocks)
+
+                  // Auto-save
+                  await saveSchedule(workingHours, updatedBlocks)
                 }}
               >
                 Add Blocked Time
@@ -243,22 +348,13 @@ export default function MyScheduleView() {
           </CardContent>
         </Card>
 
-        {/* Save Button */}
-        <div className="flex justify-end">
-          <Button onClick={handleSave} className="bg-primary hover:bg-primary/90" disabled={isSaving}>
-            {isSaving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Save Schedule
-              </>
-            )}
-          </Button>
-        </div>
+        {/* Auto-save indicator */}
+        {isSaving && (
+          <div className="flex items-center justify-center gap-2 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <span className="text-sm">Saving changes...</span>
+          </div>
+        )}
       </div>
     </div>
   )
