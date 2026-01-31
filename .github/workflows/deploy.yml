@@ -73,12 +73,14 @@ jobs:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           NODE_ENV: production
           NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL }}
+          DOMAIN_NAME: ${{ secrets.DOMAIN_NAME }}
+          SSL_EMAIL: ${{ secrets.SSL_EMAIL }}
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ${{ secrets.EC2_USER }}
           key: ${{ secrets.EC2_SSH_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
-          envs: MONGODB_URI,JWT_SECRET,GEMINI_API_KEY,NODE_ENV,NEXT_PUBLIC_API_URL
+          envs: MONGODB_URI,JWT_SECRET,GEMINI_API_KEY,NODE_ENV,NEXT_PUBLIC_API_URL,DOMAIN_NAME,SSL_EMAIL
           script: |
             set -e
 
@@ -132,6 +134,24 @@ jobs:
 
             # Test and Reload Nginx
             sudo nginx -t && sudo systemctl reload nginx
+
+            # --- SSL Configuration (Certbot) ---
+            # Install Certbot if not present
+            if ! command -v certbot &> /dev/null; then
+                echo "📦 Certbot not found. Installing..."
+                sudo apt-get install -y certbot python3-certbot-nginx
+            fi
+
+            # Check if certificate exists, if not generate it
+            # We use the domain from secrets.
+            # Using --nginx plugin to automatically configure Nginx
+            if [ ! -d "/etc/letsencrypt/live/${{ env.DOMAIN_NAME }}" ]; then
+                echo "🔒 Generating SSL Certificate for ${{ env.DOMAIN_NAME }}..."
+                sudo certbot --nginx -d "${{ env.DOMAIN_NAME }}" --non-interactive --agree-tos -m "${{ env.SSL_EMAIL }}"
+            else
+                echo "🔒 SSL Certificate already exists. Renewing if needed..."
+                sudo certbot renew
+            fi
             # ---------------------------
 
             # Create log directory for PM2
