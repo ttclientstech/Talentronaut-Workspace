@@ -119,7 +119,7 @@ jobs:
             cat << 'NGINX_CONF' | sudo tee /etc/nginx/sites-available/default > /dev/null
             server {
                 listen 80;
-                server_name _;
+                server_name ${{ secrets.DOMAIN_NAME }};
 
                 location / {
                     proxy_pass http://localhost:3000;
