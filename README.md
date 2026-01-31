@@ -1,4 +1,4 @@
-<<<<<<< HEAD
+
 # AI powered Work Manager
 
 A modern, full-stack AI powered Work Manager application built with Next.js 16, TypeScript, MongoDB, and AI-powered task assignment.
@@ -363,7 +363,3 @@ This project is private and proprietary.
 ## Support
 
 For issues and questions, please create an issue in the repository.
-=======
-# Talentronaut-Workspace
-This is Workspace for Talentronaut.
->>>>>>> d950351 (Initial commit)
