@@ -117,6 +117,14 @@ jobs:
             # Configure Nginx Proxy
             echo "🔧 Configuring Nginx..."
             cat << 'NGINX_CONF' | sudo tee /etc/nginx/sites-available/default > /dev/null
+            # Catch-all block to drop requests to IP or unmatched domains
+            server {
+                listen 80 default_server;
+                server_name _;
+                return 444; # Connection closed without response
+            }
+
+            # Main site block
             server {
                 listen 80;
                 server_name ${{ secrets.DOMAIN_NAME }};
@@ -142,16 +150,12 @@ jobs:
                 sudo apt-get install -y certbot python3-certbot-nginx
             fi
 
-            # Check if certificate exists, if not generate it
-            # We use the domain from secrets.
-            # Using --nginx plugin to automatically configure Nginx
-            if [ ! -d "/etc/letsencrypt/live/${{ env.DOMAIN_NAME }}" ]; then
-                echo "🔒 Generating SSL Certificate for ${{ env.DOMAIN_NAME }}..."
-                sudo certbot --nginx -d "${{ env.DOMAIN_NAME }}" --non-interactive --agree-tos -m "${{ env.SSL_EMAIL }}"
-            else
-                echo "🔒 SSL Certificate already exists. Renewing if needed..."
-                sudo certbot renew
-            fi
+            # Generate/Install SSL Certificate
+            # Using --nginx to configure Nginx automatically
+            # --redirect: Force HTTP->HTTPS redirect
+            # --keep-until-expiring: Don't request a new cert if existing one is valid
+            echo "🔒 Configuring SSL for ${{ env.DOMAIN_NAME }}..."
+            sudo certbot --nginx -d "${{ env.DOMAIN_NAME }}" --non-interactive --agree-tos -m "${{ env.SSL_EMAIL }}" --redirect --keep-until-expiring
             # ---------------------------
 
             # Create log directory for PM2
