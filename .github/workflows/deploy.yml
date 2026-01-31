@@ -104,6 +104,36 @@ jobs:
                 sudo npm install -g pm2
             fi
 
+            # --- Nginx Configuration ---
+            # Install Nginx if not present
+            if ! command -v nginx &> /dev/null; then
+                echo "📦 Nginx not found. Installing..."
+                sudo apt-get update
+                sudo apt-get install -y nginx
+            fi
+
+            # Configure Nginx Proxy
+            echo "🔧 Configuring Nginx..."
+            cat << 'NGINX_CONF' | sudo tee /etc/nginx/sites-available/default > /dev/null
+            server {
+                listen 80;
+                server_name _;
+
+                location / {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                }
+            }
+            NGINX_CONF
+
+            # Test and Reload Nginx
+            sudo nginx -t && sudo systemctl reload nginx
+            # ---------------------------
+
             # Create log directory for PM2
             echo "📝 Configuring log directory..."
             if [ ! -d "/var/log/work-manager" ]; then
