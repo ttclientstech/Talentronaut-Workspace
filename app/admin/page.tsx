@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import AdminUsersView from "@/components/admin-users-view"
 import PasswordsView from "@/components/passwords-view"
+import { UserSettingsDialog } from "@/components/user-settings-dialog"
 
 export default function AdminPage() {
   return (
@@ -157,16 +158,8 @@ function AdminPageContent() {
               <p className="font-bold text-white text-sm truncate">{user?.name || "User"}</p>
               <p className="text-[11px] text-white/60 font-medium truncate uppercase tracking-wide">{user?.role || "Admin"}</p>
             </div>
+            <UserSettingsDialog />
           </div>
-          <Button
-            onClick={logout}
-            variant="ghost"
-            className="w-full mt-3 justify-start text-white/70 hover:bg-black/20 hover:text-white hover:shadow-none transition-all rounded-xl h-10 px-4"
-            size="sm"
-          >
-            <LogOut className="w-4 h-4 mr-3" />
-            <span className="font-medium">Sign Out</span>
-          </Button>
         </div>
       </nav>
 
