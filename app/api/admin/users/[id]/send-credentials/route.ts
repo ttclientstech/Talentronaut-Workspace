@@ -6,45 +6,45 @@ import { sendEmail, sendSMS } from "@/lib/notification"
 
 // Helper to check admin auth
 async function checkAdmin(request: NextRequest) {
-    const token = request.cookies.get("token")?.value
-    if (!token) return null
+  const token = request.cookies.get("token")?.value
+  if (!token) return null
 
-    const decoded = verifyToken(token)
-    if (!decoded) return null
+  const decoded = verifyToken(token)
+  if (!decoded) return null
 
-    if (decoded.role !== "Admin") return null
+  if (decoded.role !== "Admin") return null
 
-    return decoded
+  return decoded
 }
 
 export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-    try {
-        await connectDB()
-        const admin = await checkAdmin(request)
+  try {
+    await connectDB()
+    const admin = await checkAdmin(request)
 
-        if (!admin) {
-            return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
-        }
+    if (!admin) {
+      return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
+    }
 
-        const { id: userId } = await params
-        const body = await request.json()
+    const { id: userId } = await params
+    const body = await request.json()
 
-        const { method } = body // 'email' or 'phone'
+    const { method } = body // 'email' or 'phone'
 
-        const user = await User.findById(userId)
-        if (!user) {
-            return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
-        }
+    const user = await User.findById(userId)
+    if (!user) {
+      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
+    }
 
-        if (!user.accessCode) {
-            return NextResponse.json({ success: false, error: "User has no access code" }, { status: 400 })
-        }
+    if (!user.accessCode) {
+      return NextResponse.json({ success: false, error: "User has no access code" }, { status: 400 })
+    }
 
-        if (method === "email") {
-            if (!user.email) {
-                return NextResponse.json({ success: false, error: "User has no email" }, { status: 400 })
-            }
-            const htmlContent = `
+    if (method === "email") {
+      if (!user.email) {
+        return NextResponse.json({ success: false, error: "User has no email" }, { status: 400 })
+      }
+      const htmlContent = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 
       <!-- CTA Button -->
       <div style="text-align: center; margin-bottom: 32px;">
-        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/login" style="background-color: #D4503A; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(212, 80, 58, 0.25);">Login to Workspace</a>
+        <a href="https://workspace.talentronaut.in/login" style="background-color: #D4503A; color: #ffffff; padding: 14px 32px; border-radius: 50px; text-decoration: none; font-weight: 600; font-size: 16px; display: inline-block; box-shadow: 0 4px 6px rgba(212, 80, 58, 0.25);">Login to Workspace</a>
       </div>
 
       <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 32px 0;" />
@@ -97,25 +97,25 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
 </html>
             `
 
-            await sendEmail(
-                user.email,
-                "Your Access Code - Talentronaut",
-                `Welcome! Your access code to login is: ${user.accessCode}`,
-                htmlContent
-            )
-        } else if (method === "phone") {
-            if (!user.phoneNumber) {
-                return NextResponse.json({ success: false, error: "User has no phone number" }, { status: 400 })
-            }
-            await sendSMS(user.phoneNumber, `Welcome! Your access code is: ${user.accessCode}`)
-        } else {
-            return NextResponse.json({ success: false, error: "Invalid method" }, { status: 400 })
-        }
-
-        return NextResponse.json({ success: true, message: `Credentials sent via ${method}` })
-
-    } catch (error: any) {
-        console.error("Send credentials error:", error)
-        return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
+      await sendEmail(
+        user.email,
+        "Your Access Code - Talentronaut",
+        `Welcome! Your access code to login is: ${user.accessCode}`,
+        htmlContent
+      )
+    } else if (method === "phone") {
+      if (!user.phoneNumber) {
+        return NextResponse.json({ success: false, error: "User has no phone number" }, { status: 400 })
+      }
+      await sendSMS(user.phoneNumber, `Welcome! Your access code is: ${user.accessCode}`)
+    } else {
+      return NextResponse.json({ success: false, error: "Invalid method" }, { status: 400 })
     }
+
+    return NextResponse.json({ success: true, message: `Credentials sent via ${method}` })
+
+  } catch (error: any) {
+    console.error("Send credentials error:", error)
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 })
+  }
 }
