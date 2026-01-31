@@ -103,6 +103,14 @@ jobs:
                 echo "📦 PM2 not found. Installing..."
                 sudo npm install -g pm2
             fi
+
+            # Create log directory for PM2
+            echo "📝 Configuring log directory..."
+            if [ ! -d "/var/log/work-manager" ]; then
+                sudo mkdir -p "/var/log/work-manager"
+            fi
+            # Always ensure permissions are correct (in case it was created by root previously)
+            sudo chown -R $USER:$USER "/var/log/work-manager"
             # ---------------------------
 
             # Create deployment directory if it doesn't exist
