@@ -84,6 +84,27 @@ jobs:
 
             echo "🚀 Starting deployment..."
 
+            # --- Provisioning Section ---
+            # Install Node.js if not present
+            if ! command -v node &> /dev/null; then
+                echo "📦 Node.js not found. Installing..."
+                curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                sudo apt-get install -y nodejs
+            fi
+
+            # Install pnpm if not present
+            if ! command -v pnpm &> /dev/null; then
+                echo "📦 pnpm not found. Installing..."
+                sudo npm install -g pnpm
+            fi
+
+            # Install PM2 if not present
+            if ! command -v pm2 &> /dev/null; then
+                echo "📦 PM2 not found. Installing..."
+                sudo npm install -g pm2
+            fi
+            # ---------------------------
+
             # Create deployment directory if it doesn't exist
             if [ ! -d "${{ env.DEPLOY_PATH }}" ]; then
               echo "📂 Directory not found. Creating ${{ env.DEPLOY_PATH }}..."
