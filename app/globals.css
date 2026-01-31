@@ -4,80 +4,118 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Modern blue-based color system */
-  --background: oklch(0.98 0 0);
-  --foreground: oklch(0.15 0 0);
+  /* Premium Design System - Terracotta & White */
+
+  /* Base */
+  --background: oklch(0.99 0.005 260);
+  --foreground: oklch(0.12 0.02 260);
+
+  /* Card */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0 0);
+  --card-foreground: oklch(0.12 0.02 260);
+
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0 0);
-  --primary: oklch(0.45 0.15 270);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.5 0.12 260);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.92 0 0);
-  --muted-foreground: oklch(0.5 0 0);
-  --accent: oklch(0.55 0.18 260);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.92 0 0);
-  --input: oklch(0.92 0 0);
-  --ring: oklch(0.45 0.15 270);
-  --chart-1: oklch(0.55 0.18 260);
-  --chart-2: oklch(0.6 0.15 200);
-  --chart-3: oklch(0.7 0.12 150);
-  --chart-4: oklch(0.65 0.14 180);
-  --chart-5: oklch(0.5 0.12 240);
-  --radius: 10px;
-  --sidebar: oklch(0.08 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.55 0.18 260);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.5 0.12 260);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.15 0 0);
-  --sidebar-ring: oklch(0.45 0.15 270);
+  --popover-foreground: oklch(0.12 0.02 260);
+
+  /* Primary - Terracotta #D4503A */
+  --primary: #D4503A;
+  --primary-foreground: #FFFFFF;
+
+  /* Secondary - Warm Light Background */
+  --secondary: #FDF6F5;
+  /* Very light version of terracotta or distinct warm grey */
+  --secondary-foreground: #2D1815;
+
+  /* Accent - Brand Color (Terracotta) */
+  --accent: #D4503A;
+  --accent-foreground: #FFFFFF;
+
+  /* Muted */
+  --muted: #F3F4F6;
+  --muted-foreground: #6B7280;
+
+  /* States */
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+
+  --border: #E5E7EB;
+  --input: #E5E7EB;
+  --ring: #D4503A;
+
+  /* Charts */
+  --chart-1: #D4503A;
+  --chart-2: #D4AF37;
+  --chart-3: #2A9D8F;
+  --chart-4: #E76F51;
+  --chart-5: #264653;
+
+  --radius: 0.75rem;
+
+  /* Sidebar - Terracotta Theme */
+  --sidebar: #D4503A;
+  --sidebar-foreground: #FFFFFF;
+  --sidebar-primary: #FFFFFF;
+  --sidebar-primary-foreground: #D4503A;
+  --sidebar-accent: #B83A24;
+  /* Slightly darker terracotta for contrast */
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #E86C56;
+  --sidebar-ring: #FFFFFF;
 }
 
 .dark {
-  --background: oklch(0.1 0 0);
-  --foreground: oklch(0.95 0 0);
-  --card: oklch(0.15 0 0);
-  --card-foreground: oklch(0.95 0 0);
-  --popover: oklch(0.15 0 0);
-  --popover-foreground: oklch(0.95 0 0);
-  --primary: oklch(0.55 0.18 260);
-  --primary-foreground: oklch(1 0 0);
-  --secondary: oklch(0.5 0.12 260);
-  --secondary-foreground: oklch(1 0 0);
-  --muted: oklch(0.25 0 0);
-  --muted-foreground: oklch(0.7 0 0);
-  --accent: oklch(0.65 0.18 270);
-  --accent-foreground: oklch(1 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.2 0 0);
-  --input: oklch(0.2 0 0);
-  --ring: oklch(0.55 0.18 260);
-  --chart-1: oklch(0.65 0.18 270);
-  --chart-2: oklch(0.6 0.15 200);
-  --chart-3: oklch(0.7 0.12 150);
-  --chart-4: oklch(0.55 0.14 180);
-  --chart-5: oklch(0.6 0.12 240);
-  --sidebar: oklch(0.08 0 0);
-  --sidebar-foreground: oklch(0.95 0 0);
-  --sidebar-primary: oklch(0.55 0.18 260);
-  --sidebar-primary-foreground: oklch(1 0 0);
-  --sidebar-accent: oklch(0.5 0.12 260);
-  --sidebar-accent-foreground: oklch(1 0 0);
-  --sidebar-border: oklch(0.15 0 0);
-  --sidebar-ring: oklch(0.45 0.15 270);
+  /* Dark Mode */
+  --background: #0F172A;
+  --foreground: #F8FAFC;
+
+  --card: #1E293B;
+  --card-foreground: #F8FAFC;
+
+  --popover: #1E293B;
+  --popover-foreground: #F8FAFC;
+
+  /* Primary usually slightly lighter in dark mode, but keeping brand identity */
+  --primary: #E56B55;
+  --primary-foreground: #0F172A;
+
+  --secondary: #334155;
+  --secondary-foreground: #F8FAFC;
+
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+
+  --accent: #D4503A;
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #7F1D1D;
+  --destructive-foreground: #F8FAFC;
+
+  --border: #334155;
+  --input: #334155;
+  --ring: #E56B55;
+
+  --chart-1: #E56B55;
+  --chart-2: #D4AF37;
+  --chart-3: #2A9D8F;
+  --chart-4: #E76F51;
+  --chart-5: #264653;
+
+  /* Sidebar */
+  --sidebar: #0F172A;
+  /* Dark sidebar for dark mode usually better */
+  --sidebar-foreground: #F8FAFC;
+  --sidebar-primary: #D4503A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #1E293B;
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: #334155;
+  --sidebar-ring: #D4503A;
 }
 
 @theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: "Geist Mono", "Geist Mono Fallback";
+  --font-brand: var(--font-brand), "Playfair Display", serif;
+  --font-body: var(--font-body), "Plus Jakarta Sans", sans-serif;
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -114,13 +152,71 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Animates */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-slide-up: slide-up 0.4s ease-out;
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-brand font-medium tracking-tight;
+  }
+}
+
+@keyframes accordion-down {
+  from {
+    height: 0
+  }
+
+  to {
+    height: var(--radix-accordion-content-height)
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height)
+  }
+
+  to {
+    height: 0
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0
+  }
+
+  to {
+    opacity: 1
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }

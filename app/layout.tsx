@@ -2,18 +2,26 @@ import type { Metadata } from 'next'
 
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-import { Geist, Geist_Mono, Geist as V0_Font_Geist, Geist_Mono as V0_Font_Geist_Mono } from 'next/font/google'
+import { Playfair_Display, Plus_Jakarta_Sans } from 'next/font/google'
 import { AuthProvider } from '@/lib/auth-context'
 import { Toaster } from '@/components/ui/sonner'
 
 // Initialize fonts
-const _geist = V0_Font_Geist({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
-const _geistMono = V0_Font_Geist_Mono({ subsets: ['latin'], weight: ["100","200","300","400","500","600","700","800","900"] })
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  variable: '--font-brand',
+  display: 'swap',
+})
+
+const jakarta = Plus_Jakarta_Sans({
+  subsets: ['latin'],
+  variable: '--font-body',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
-  title: 'AI powered Work Manager',
+  title: 'Talentronaut Workspace',
   description: 'Professional AI powered Work Manager application',
-  generator: 'v0.app',
 }
 
 export default function RootLayout({
@@ -22,8 +30,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${jakarta.variable} ${playfair.variable} font-body antialiased`}>
         <AuthProvider>
           {children}
         </AuthProvider>

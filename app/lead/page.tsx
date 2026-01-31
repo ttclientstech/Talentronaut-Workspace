@@ -47,86 +47,100 @@ function LeadPageContent() {
   return (
     <div className="flex h-screen bg-background">
       {/* Sidebar Navigation */}
-      <nav className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
-        <div className="p-2 border-b border-sidebar-border">
-          {/* Organization Switcher Removed */}
+      <nav className="w-72 bg-[#D4503A] border-r border-white/10 flex flex-col shadow-2xl relative z-20 text-white font-sans">
+        <div className="p-8 pb-6">
+          <div className="font-brand text-3xl font-bold text-white tracking-wide flex items-center gap-2 mb-1">
+            Talentronaut
+          </div>
+          <p className="text-xs text-white/60 font-medium tracking-[0.2em] uppercase ml-1">Lead Workspace</p>
         </div>
 
-        <div className="flex-1 p-4 space-y-2">
+        <div className="flex-1 px-4 space-y-1 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:'none'] [scrollbar-width:none]">
+          <div className="mb-2 px-4 py-2">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest font-mono">Overview</p>
+          </div>
           <button
             onClick={() => handleViewChange("dashboard")}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${currentView === "dashboard"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/20"
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group relative overflow-hidden ${currentView === "dashboard"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
               }`}
           >
             Dashboard
           </button>
+
+          <div className="mt-6 mb-2 px-4 py-2">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest font-mono">Work</p>
+          </div>
           <button
             onClick={() => handleViewChange("my-tasks")}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${currentView === "my-tasks"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/20"
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "my-tasks"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
               }`}
           >
             My Tasks
           </button>
           <button
             onClick={() => handleViewChange("projects")}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${currentView === "projects"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/20"
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "projects"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
               }`}
           >
             Projects
           </button>
           <button
             onClick={() => handleViewChange("members")}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-colors flex items-center gap-2 ${currentView === "members"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/20"
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "members"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
               }`}
           >
             Members
           </button>
+
+          <div className="mt-6 mb-2 px-4 py-2">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest font-mono">Personal</p>
+          </div>
           <button
             onClick={() => handleViewChange("my-schedule")}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${currentView === "my-schedule"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/20"
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "my-schedule"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
               }`}
           >
             My Schedule
           </button>
           <button
             onClick={() => handleViewChange("my-skills")}
-            className={`w-full text-left px-4 py-3 rounded-lg transition-colors ${currentView === "my-skills"
-              ? "bg-sidebar-primary text-sidebar-primary-foreground"
-              : "text-sidebar-foreground hover:bg-sidebar-accent/20"
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "my-skills"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
               }`}
           >
             My Skills
           </button>
         </div>
 
-        <div className="mt-auto p-4 border-t border-sidebar-border space-y-2">
-          <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-sidebar-accent/20">
-            <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center text-xs font-bold text-sidebar-primary-foreground">
+        <div className="mt-auto p-6 border-t border-white/10">
+          <div className="flex items-center gap-4 p-3 rounded-2xl bg-black/10 border border-white/5 backdrop-blur-sm">
+            <div className="w-10 h-10 rounded-full bg-white text-[#D4503A] flex items-center justify-center text-sm font-black shadow-sm ring-2 ring-white/20">
               {user?.name?.charAt(0).toUpperCase() || "L"}
             </div>
-            <div className="flex-1 text-sm min-w-0">
-              <p className="font-medium text-sidebar-foreground truncate">{user?.role || "Lead"}</p>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{user?.email || "user@example.com"}</p>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-white text-sm truncate">{user?.name || "Lead"}</p>
+              <p className="text-[11px] text-white/60 font-medium truncate uppercase tracking-wide">{user?.role || "Lead"}</p>
             </div>
           </div>
           <Button
             onClick={logout}
             variant="ghost"
-            className="w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/20 hover:text-sidebar-foreground"
+            className="w-full mt-3 justify-start text-white/70 hover:bg-black/20 hover:text-white hover:shadow-none transition-all rounded-xl h-10 px-4"
             size="sm"
           >
-            <LogOut className="w-4 h-4 mr-2" />
-            Logout
+            <LogOut className="w-4 h-4 mr-3" />
+            <span className="font-medium">Sign Out</span>
           </Button>
         </div>
       </nav>
