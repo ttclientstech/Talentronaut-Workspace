@@ -52,7 +52,6 @@ export async function POST(request: NextRequest) {
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
-      organizationId: user.organizationId?.toString(),
     })
 
     // Create response
@@ -66,7 +65,6 @@ export async function POST(request: NextRequest) {
           email: user.email,
           profilePicture: user.profilePicture,
           role: user.role,
-          organizationId: user.organizationId,
         },
         token,
       },

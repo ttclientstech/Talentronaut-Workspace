@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Users, ChevronDown, Trash2, Clock, CheckCircle, XCircle, RefreshCw, Undo2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 
 interface PendingMember {
@@ -31,7 +30,6 @@ interface MembersViewProps {
 }
 
 export default function MembersView({ onViewChange }: MembersViewProps) {
-  const { currentOrganization, members: orgMembers, isLoading: orgLoading, refreshOrganization } = useOrganization()
   const { user } = useAuth()
   const [members, setMembers] = useState<Member[]>([])
   const [isLoadingMembers, setIsLoadingMembers] = useState(true)
@@ -41,8 +39,6 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
 
   // Fetch members with project details
   const fetchMembers = async () => {
-    if (!currentOrganization) return
-
     try {
       setIsLoadingMembers(true)
       const token = localStorage.getItem("token")
@@ -55,27 +51,14 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
 
       const data = await response.json()
 
-      if (data.success && data.members && data.members.length > 0) {
+      if (data.success && data.members) {
         setMembers(data.members)
       } else {
-        // Fallback to organization context members if API returns empty or fails
-        
-        setMembers(
-          orgMembers.map((m) => ({
-            ...m,
-            projects: [],
-          })),
-        )
+        setMembers([])
       }
     } catch (error) {
       console.error("Error fetching members:", error)
-      // Fallback to organization context members on error
-      setMembers(
-        orgMembers.map((m) => ({
-          ...m,
-          projects: [],
-        })),
-      )
+      setMembers([])
     } finally {
       setIsLoadingMembers(false)
     }
@@ -83,8 +66,6 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
 
   // Fetch pending member requests from API
   const fetchPendingRequests = async () => {
-    if (!currentOrganization) return
-
     try {
       setIsLoadingRequests(true)
       const token = localStorage.getItem("token")
@@ -118,7 +99,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
   useEffect(() => {
     fetchMembers()
     fetchPendingRequests()
-  }, [currentOrganization])
+  }, [])
 
   const handleApprove = async (pendingMember: PendingMember) => {
     try {
@@ -139,8 +120,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
         // Remove from pending list
         setPendingMembers((prev) => prev.filter((p) => p.id !== pendingMember.id))
         alert(`${pendingMember.name} has been approved and can now access the organization!`)
-        // Refresh organization data and members list
-        await refreshOrganization()
+        // Refresh members list
         await fetchMembers()
       } else {
         alert(data.error || "Failed to approve request")
@@ -200,10 +180,10 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
           prev.map((m) =>
             m.id === memberId
               ? {
-                  ...m,
-                  role: newRole,
-                  previousRole: data.user.previousRole,
-                }
+                ...m,
+                role: newRole,
+                previousRole: data.user.previousRole,
+              }
               : m,
           ),
         )
@@ -244,6 +224,8 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
     }
 
     try {
+      // For Single Company mode, we just remove the user for now
+      // In a real app we might want to deactivate or similar, but DELETE is fine
       const token = localStorage.getItem("token")
       const response = await fetch(`/api/members/${member.id}/remove`, {
         method: "DELETE",
@@ -258,18 +240,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
       if (data.success) {
         // Remove from local state
         setMembers((prev) => prev.filter((m) => m.id !== member.id))
-
-        // Check if user was switched to another organization
-        if (data.switchedTo) {
-          alert(
-            `${member.name} has been removed from this organization.\n\nThey have been automatically switched to "${data.switchedTo.name}" where they are a ${data.switchedTo.role}.`,
-          )
-        } else {
-          alert(data.message)
-        }
-
-        // Refresh organization data
-        await refreshOrganization()
+        alert(data.message)
       } else {
         alert(data.error || "Failed to remove member")
       }
@@ -293,16 +264,13 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
   }
 
   // Show loading state
-  if (orgLoading || isLoadingMembers) {
+  if (isLoadingMembers) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
         <p className="text-muted-foreground">Loading team members...</p>
       </div>
     )
   }
-
-  // Don't render if organization data is not loaded yet
-  if (!currentOrganization) return null
 
   return (
     <div className="p-8">
@@ -314,8 +282,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
             Team Members
           </h2>
           <p className="text-muted-foreground">
-            Manage team members in <span className="font-semibold text-foreground">{currentOrganization.name}</span> (
-            {members.length} {members.length === 1 ? "member" : "members"})
+            Manage your team members ({members.length} {members.length === 1 ? "member" : "members"})
           </p>
         </div>
         <Button
@@ -382,7 +349,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
 
       {/* Members Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
-        {members && members.length > 0 ? (
+        {members.length > 0 ? (
           members.map((member) => (
             <Card key={member.id} className="hover:shadow-lg transition-shadow">
               <CardHeader className="pb-3">
@@ -520,18 +487,18 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
           <div className="grid grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground mb-1">Total Members</p>
-              <p className="text-2xl font-bold text-foreground">{members?.length || 0}</p>
+              <p className="text-2xl font-bold text-foreground">{members.length}</p>
             </div>
             <div className="p-4 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground mb-1">Admins</p>
               <p className="text-2xl font-bold text-foreground">
-                {members?.filter((m) => m.role === "Admin").length || 0}
+                {members.filter((m) => m.role === "Admin").length}
               </p>
             </div>
             <div className="p-4 rounded-lg bg-muted">
               <p className="text-xs text-muted-foreground mb-1">Leads</p>
               <p className="text-2xl font-bold text-foreground">
-                {members?.filter((m) => m.role === "Lead").length || 0}
+                {members.filter((m) => m.role === "Lead").length}
               </p>
             </div>
           </div>

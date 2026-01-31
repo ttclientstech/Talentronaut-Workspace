@@ -1,13 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { Users, Settings, CreditCard, Shield, Mail } from "lucide-react"
+import { Users, Settings, CreditCard, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useOrganization } from "@/lib/organization-context"
-import MembersView from "@/components/members-view"
 
 interface TeamSettingsModalProps {
   isOpen: boolean
@@ -15,10 +12,8 @@ interface TeamSettingsModalProps {
 }
 
 export default function TeamSettingsModal({ isOpen, onClose }: TeamSettingsModalProps) {
-  const { currentOrganization, isLoading } = useOrganization()
-
-  // Don't render if organization data is not loaded yet
-  if (isLoading || !currentOrganization) return null
+  // Static organization name for single-company architecture
+  const organizationName = "My Company"
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -29,7 +24,7 @@ export default function TeamSettingsModal({ isOpen, onClose }: TeamSettingsModal
             Team Settings
           </DialogTitle>
           <DialogDescription>
-            Manage all organization members, billing, and settings for {currentOrganization.name}
+            Manage all organization members, billing, and settings for {organizationName}
           </DialogDescription>
         </DialogHeader>
 
@@ -69,7 +64,7 @@ export default function TeamSettingsModal({ isOpen, onClose }: TeamSettingsModal
             <Card>
               <CardHeader>
                 <CardTitle>Billing & Subscription</CardTitle>
-                <CardDescription>Manage your organization's billing and subscription</CardDescription>
+                <CardDescription>Manage your organization&apos;s billing and subscription</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="p-4 border rounded-lg">
@@ -152,4 +147,3 @@ export default function TeamSettingsModal({ isOpen, onClose }: TeamSettingsModal
     </Dialog>
   )
 }
-

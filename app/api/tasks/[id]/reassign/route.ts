@@ -29,30 +29,24 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, error: "Task not found" }, { status: 404 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId organizations")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!currentUser || !orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
+    // Find the project (if applicable)
+    let project = null
+    if (task.projectId) {
+      project = await Project.findById(task.projectId)
     }
 
-    
-    // Find the project
-    const project = await Project.findById(task.projectId)
-    if (!project) {
-      return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
-    }
+    // Check permissions
+    // Allow if:
+    // 1. User is Admin
+    // 2. User is Project Lead (if project exists)
+    // 3. User is Assigner (optional, but good for self-delegation updates)
+    const isAdmin = auth.user.role === "Admin"
+    const isProjectLead = project && project.leadId?.toString() === auth.user.userId
 
-    // Check if user is the lead of this project or Admin in THIS organization
-    const isProjectLead = project.leadId?.toString() === auth.user.userId
+    // Also allow global Leads to manage tasks if needed, or stick to project lead?
+    // Let's stick to Project Lead or Admin for reassigning others' tasks.
 
-    const userOrgMembership = currentUser.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-    const isAdmin = userOrgMembership?.role === "Admin"
-
-    if (!isProjectLead && !isAdmin) {
+    if (!isAdmin && !isProjectLead) {
       return NextResponse.json(
         { success: false, error: "Only project leads or admins can reassign tasks" },
         { status: 403 },
@@ -60,36 +54,29 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     }
 
     // Check if new assignee exists
-    const newAssignee = await User.findById(newAssigneeId).select("name email organizations")
+    const newAssignee = await User.findById(newAssigneeId).select("name email role")
     if (!newAssignee) {
       return NextResponse.json({ success: false, error: "New assignee not found" }, { status: 404 })
     }
 
-    // Check if new assignee is in the same organization (check organizations array)
-    const newAssigneeInOrg = newAssignee.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
+    // If project exists, check if new assignee is a member of the project or is the lead
+    if (project) {
+      const isProjectMember =
+        project.memberIds.some((id: any) => id.toString() === newAssigneeId) ||
+        project.leadId?.toString() === newAssigneeId
 
-    if (!newAssigneeInOrg) {
-      return NextResponse.json({ success: false, error: "New assignee not in your organization" }, { status: 403 })
-    }
-
-    // Check if new assignee is a member of the project or is the lead
-    const isProjectMember =
-      project.memberIds.some((id) => id.toString() === newAssigneeId) ||
-      project.leadId?.toString() === newAssigneeId
-
-    if (!isProjectMember) {
-      return NextResponse.json(
-        { success: false, error: "New assignee is not a member of this project" },
-        { status: 400 },
-      )
+      if (!isProjectMember) {
+        return NextResponse.json(
+          { success: false, error: "New assignee is not a member of this project" },
+          { status: 400 },
+        )
+      }
     }
 
     // Get old assignee name for response
     const oldAssignee = task.assignedToId ? await User.findById(task.assignedToId) : null
 
-    // Update task assignee (the field is assignedToId, not assignedTo)
+    // Update task assignee (the field is assignedToId)
     task.assignedToId = newAssigneeId
     await task.save()
 

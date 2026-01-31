@@ -35,42 +35,23 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify lead exists and is in the same organization (use database organizationId, not JWT)
+    // Verify lead exists
     const lead = await User.findById(leadId)
-    if (!lead || lead.organizationId?.toString() !== user.organizationId?.toString()) {
+    if (!lead) {
       return NextResponse.json({ success: false, error: "Invalid project lead" }, { status: 400 })
     }
 
-    // Promote lead to "Lead" role in THIS organization if they're currently a "Member"
-    // Initialize organizations array if it doesn't exist
-    if (!lead.organizations) {
-      lead.organizations = []
-    }
-
-    const orgIndex = lead.organizations.findIndex(
-      (org: any) => org.organizationId.toString() === user.organizationId?.toString(),
-    )
-
-    if (orgIndex !== -1) {
-      // Update role in organizations array if currently Member
-      if (lead.organizations[orgIndex].role === "Member") {
-        lead.organizations[orgIndex].role = "Lead"
-     
-      }
-    }
-
-    // Update global role if this is their current organization
-    if (lead.currentOrganizationId?.toString() === user.organizationId?.toString() && lead.role === "Member") {
+    // Update global role if necessary
+    if (lead.role === "Member") {
       lead.role = "Lead"
+      await lead.save()
     }
 
-    await lead.save()
-
-    // Create new project (use database organizationId, not JWT)
+    // Create new project
     const newProject = new Project({
       name,
       description: description || "",
-      organizationId: user.organizationId,
+      // organizationId removed
       leadId,
       memberIds: [leadId], // Lead is automatically added as a member
       status: "Not Started",
@@ -121,16 +102,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const user = await User.findById(auth.user.userId).select("organizationId")
-    if (!user || !user.organizationId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    // Fetch projects for the user's organization
-    const projects = await Project.find({
-      organizationId: user.organizationId,
-    })
+    // Fetch projects (global scope for single company)
+    const projects = await Project.find({})
       .populate("leadId", "name email")
       .populate("memberIds", "name")
       .sort({ createdAt: -1 })

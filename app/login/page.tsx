@@ -7,43 +7,31 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useAuth } from "@/lib/auth-context"
-import { AlertCircle } from "lucide-react"
+import { AlertCircle, KeyRound } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
-  const { user, isLoading: authLoading, isAuthenticated, login, signup } = useAuth()
+  const { user, isLoading: authLoading, isAuthenticated, loginWithAccessCode } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
-  const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState("")
-
-  // Form fields
-  const [name, setName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
-  const [confirmPassword, setConfirmPassword] = useState("")
+  const [accessCode, setAccessCode] = useState("")
 
   // Redirect if already authenticated
   useEffect(() => {
     if (!authLoading && isAuthenticated && user) {
-      // Check if user has organization
-      if (user.organizationId) {
-        // Redirect based on role
-        switch (user.role) {
-          case "Admin":
-            router.push("/admin")
-            break
-          case "Lead":
-            router.push("/lead")
-            break
-          case "Member":
-            router.push("/member")
-            break
-          default:
-            router.push("/welcome")
-        }
-      } else {
-        // No organization - redirect to welcome
-        router.push("/welcome")
+      // Redirect based on role
+      switch (user.role) {
+        case "Admin":
+          router.push("/admin")
+          break
+        case "Lead":
+          router.push("/lead")
+          break
+        case "Member":
+          router.push("/member")
+          break
+        default:
+          router.push("/dashboard")
       }
     }
   }, [authLoading, isAuthenticated, user, router])
@@ -54,44 +42,14 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      if (isSignUp) {
-        // Signup validation
-        if (!name.trim()) {
-          throw new Error("Name is required")
-        }
-        if (!email.trim()) {
-          throw new Error("Email is required")
-        }
-        if (password.length < 6) {
-          throw new Error("Password must be at least 6 characters")
-        }
-        if (password !== confirmPassword) {
-          throw new Error("Passwords do not match")
-        }
-
-        // Call signup
-        await signup(name, email, password)
-
-        // Redirect to welcome page after successful signup
-        router.push("/welcome")
-      } else {
-        // Login validation
-        if (!email.trim()) {
-          throw new Error("Email is required")
-        }
-        if (!password) {
-          throw new Error("Password is required")
-        }
-
-        // Call login
-        await login(email, password)
-
-        // Router will be handled by auth context redirect
-        // But we can manually redirect based on user data if needed
-        router.push("/")
+      if (!accessCode.trim()) {
+        throw new Error("Access code is required")
       }
+
+      await loginWithAccessCode(accessCode)
+      router.push("/")
     } catch (err: any) {
-      setError(err.message || "An error occurred. Please try again.")
+      setError(err.message || "Invalid access code. Please try again.")
     } finally {
       setIsLoading(false)
     }
@@ -109,23 +67,23 @@ export default function LoginPage() {
     )
   }
 
-  // Don't render login form if already authenticated (will be redirected)
+  // Don't render login form if already authenticated
   if (isAuthenticated && user) {
     return null
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-primary/10 via-background to-accent/10 p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-4">
-         
-          <CardTitle className="text-3xl font-bold">
-            {isSignUp ? "Create Account" : "Welcome Back"}
-          </CardTitle>
+          <div className="flex justify-center mb-2">
+            <div className="p-3 bg-primary/10 rounded-full">
+              <KeyRound className="w-8 h-8 text-primary" />
+            </div>
+          </div>
+          <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
           <CardDescription className="text-base">
-            {isSignUp
-              ? "Sign up to start managing your projects"
-              : "Sign in to your account to continue"}
+            Enter your access code to sign in
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -133,78 +91,26 @@ export default function LoginPage() {
             {/* Error Message */}
             {error && (
               <div className="p-3 bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg flex items-start gap-2">
-                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-500 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-500 shrink-0 mt-0.5" />
                 <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
               </div>
             )}
 
-            {/* Name Field (Signup only) */}
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required={isSignUp}
-                  disabled={isLoading}
-                  className="h-11"
-                />
-              </div>
-            )}
-
-            {/* Email Field */}
+            {/* Access Code Field */}
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="accessCode">Access Code</Label>
               <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="accessCode"
+                type="text"
+                placeholder="Enter your access code"
+                value={accessCode}
+                onChange={(e) => setAccessCode(e.target.value)}
                 required
                 disabled={isLoading}
-                className="h-11"
+                className="h-11 text-center font-mono text-lg tracking-wider uppercase"
+                autoComplete="off"
               />
             </div>
-
-            {/* Password Field */}
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="h-11"
-                minLength={6}
-              />
-              {isSignUp && (
-                <p className="text-xs text-muted-foreground">Must be at least 6 characters</p>
-              )}
-            </div>
-
-            {/* Confirm Password Field (Signup only) */}
-            {isSignUp && (
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required={isSignUp}
-                  disabled={isLoading}
-                  className="h-11"
-                />
-              </div>
-            )}
 
             {/* Submit Button */}
             <Button
@@ -215,37 +121,16 @@ export default function LoginPage() {
               {isLoading ? (
                 <div className="flex items-center gap-2">
                   <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                  <span>{isSignUp ? "Creating account..." : "Signing in..."}</span>
+                  <span>Signing in...</span>
                 </div>
               ) : (
-                <span>{isSignUp ? "Create Account" : "Sign In"}</span>
+                <span>Sign In</span>
               )}
             </Button>
           </form>
 
-          {/* Toggle between Login/Signup */}
-          <div className="text-center">
-            <button
-              onClick={() => {
-                setIsSignUp(!isSignUp)
-                setError("")
-                // Clear form when switching
-                setName("")
-                setEmail("")
-                setPassword("")
-                setConfirmPassword("")
-              }}
-              disabled={isLoading}
-              className="text-sm text-primary hover:underline disabled:opacity-50"
-            >
-              {isSignUp
-                ? "Already have an account? Sign in"
-                : "Don't have an account? Sign up"}
-            </button>
-          </div>
-
           <div className="text-center text-xs text-muted-foreground">
-            By continuing, you agree to our Terms of Service and Privacy Policy
+            Contact your administrator if you successfully lost your access code.
           </div>
         </CardContent>
       </Card>

@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/middleware/auth"
 import Project from "@/lib/models/Project"
-import User from "@/lib/models/User"
 import connectDB from "@/lib/db/mongodb"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
@@ -18,22 +17,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database
-    const currentUser = await User.findById(auth.user.userId).select(
-      "currentOrganizationId organizationId organizations name"
-    )
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    // Check if user is Lead
-    const userOrgMembership = currentUser.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!userOrgMembership || userOrgMembership.role !== "Lead") {
+    // Check if user is Lead (global role check)
+    if (auth.user.role !== "Lead") {
       return NextResponse.json({ success: false, error: "Only Leads can use this feature" }, { status: 403 })
     }
 
@@ -44,9 +29,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Prompt is required" }, { status: 400 })
     }
 
-    // Find projects where the user is the lead
+    // Find projects where the user is the leads
     const projects = await Project.find({
-      organizationId: orgId,
       leadId: auth.user.userId,
     }).populate("memberIds", "name email skills")
 

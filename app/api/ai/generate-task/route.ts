@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/middleware/auth"
 import Project from "@/lib/models/Project"
-import User from "@/lib/models/User"
 import connectDB from "@/lib/db/mongodb"
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
@@ -18,20 +17,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId organizations")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
     // Check if user is Admin
-    const userOrgMembership = currentUser.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!userOrgMembership || userOrgMembership.role !== "Admin") {
+    if (auth.user.role !== "Admin") {
       return NextResponse.json({ success: false, error: "Only Admins can use AI task generation" }, { status: 403 })
     }
 
@@ -42,17 +29,15 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Prompt is required" }, { status: 400 })
     }
 
-    
-
-    // Fetch all projects in the organization
-    const projects = await Project.find({ organizationId: orgId })
+    // Fetch all projects (Global)
+    const projects = await Project.find({})
       .select("_id name description leadId")
       .populate("leadId", "name email")
       .lean()
 
     if (!projects || projects.length === 0) {
       return NextResponse.json(
-        { success: false, error: "No projects found in organization. Create a project first." },
+        { success: false, error: "No projects found. Create a project first." },
         { status: 400 }
       )
     }
@@ -68,7 +53,7 @@ export async function POST(request: NextRequest) {
     // Create AI prompt
     const aiPrompt = `You are an AI assistant helping an Admin delegate tasks to project leads in a professional work management system.
 
-AVAILABLE PROJECTS IN ORGANIZATION:
+AVAILABLE PROJECTS:
 ${projectsContext}
 
 ADMIN'S REQUEST:
@@ -123,8 +108,6 @@ RESPOND ONLY WITH VALID JSON (no markdown, no code blocks, just pure JSON):
     const response = result.response
     const text = response.text()
 
-    
-
     // Parse AI response
     let aiResponse
     try {
@@ -155,7 +138,6 @@ RESPOND ONLY WITH VALID JSON (no markdown, no code blocks, just pure JSON):
     // Verify project exists and get the actual lead from the project
     const verifiedProject = projects.find((p: any) => p._id.toString() === aiResponse.projectId)
     if (!verifiedProject) {
-      console.error(`[AI_TASK_GEN] AI returned invalid projectId: ${aiResponse.projectId}`)
       return NextResponse.json(
         { success: false, error: "AI selected an invalid project. Please try again." },
         { status: 500 }
@@ -163,20 +145,16 @@ RESPOND ONLY WITH VALID JSON (no markdown, no code blocks, just pure JSON):
     }
 
     // Use the actual leadId from the verified project, not from AI response
-    // Handle both populated and non-populated leadId
     const leadData = verifiedProject.leadId as any
     const actualLeadId = leadData?._id || leadData
     const actualLeadName = leadData?.name || "Unknown Lead"
 
     if (!actualLeadId) {
-      console.error(`[AI_TASK_GEN] Project "${verifiedProject.name}" has no lead assigned`)
       return NextResponse.json(
         { success: false, error: `Project "${verifiedProject.name}" has no lead assigned. Please assign a lead first.` },
         { status: 400 }
       )
     }
-
-    
 
     return NextResponse.json(
       {

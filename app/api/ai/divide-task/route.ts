@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/middleware/auth"
 import Task from "@/lib/models/Task"
-import Project from "@/lib/models/Project"
 import User from "@/lib/models/User"
 import connectDB from "@/lib/db/mongodb"
 import { GoogleGenerativeAI } from "@google/generative-ai"
@@ -29,22 +28,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database
-    const currentUser = await User.findById(auth.user.userId).select(
-      "currentOrganizationId organizationId organizations name"
-    )
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    // Check if user is Lead or Admin
-    const userOrgMembership = currentUser.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!userOrgMembership || !["Lead", "Admin"].includes(userOrgMembership.role)) {
+    // Check if user is Lead or Admin globally
+    if (!["Lead", "Admin"].includes(auth.user.role)) {
       return NextResponse.json({ success: false, error: "Only Leads and Admins can divide tasks" }, { status: 403 })
     }
 
@@ -55,17 +40,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Task ID is required" }, { status: 400 })
     }
 
-
-
     // Fetch the task
     const task = await Task.findById(taskId).populate("projectId")
     if (!task) {
       return NextResponse.json({ success: false, error: "Task not found" }, { status: 404 })
-    }
-
-    // Verify task belongs to current organization
-    if (task.organizationId.toString() !== orgId.toString()) {
-      return NextResponse.json({ success: false, error: "Unauthorized to access this task" }, { status: 403 })
     }
 
     // Ensure task has a project
@@ -79,17 +57,17 @@ export async function POST(request: NextRequest) {
     const project = task.projectId as any
 
     // Verify user is the lead of this project (or admin)
-    if (userOrgMembership.role === "Lead" && project.leadId.toString() !== auth.user.userId) {
+    // Simplification: Allow Admin to divide any task, and Lead to divide only their project tasks
+    if (auth.user.role === "Lead" && project.leadId?.toString() !== auth.user.userId) {
       return NextResponse.json(
         { success: false, error: "You can only divide tasks in your own projects" },
         { status: 403 }
       )
     }
 
-    // Fetch project members with their skills
+    // Fetch project members with their skills (Global fetch based on project membership)
     const projectMembers = await User.find({
       _id: { $in: project.memberIds },
-      "organizations.organizationId": orgId,
     }).select("name email skills")
 
     if (!projectMembers || projectMembers.length === 0) {
@@ -110,8 +88,11 @@ export async function POST(request: NextRequest) {
       })
       .join("\n\n")
 
-    // Also include the lead as fallback
-    const leadInfo = `\n\n- ${currentUser.name} (ID: ${currentUser._id}) [PROJECT LEAD]\n  Role: Project Lead (assign as fallback if no suitable match)`
+    // Get current user details for fallback
+    const currentUser = await User.findById(auth.user.userId).select("name")
+
+    // Also include the lead/admin as fallback
+    const leadInfo = `\n\n- ${currentUser?.name || "CurrentUser"} (ID: ${auth.user.userId}) [PROJECT LEAD/ADMIN]\n  Role: Project Lead (assign as fallback if no suitable match)`
 
     // Create AI prompt
     const aiPrompt = `You are an AI assistant helping a Project Lead divide a complex task into subtasks and assign them to team members based on their skills.
@@ -143,7 +124,7 @@ INSTRUCTIONS:
 4. For each assignment, provide:
    - Match score (0-100): how well the member's skills match the subtask
    - Reasoning: why this member is assigned
-5. If no team member has relevant skills for a subtask, assign it to the Project Lead (${currentUser.name})
+5. If no team member has relevant skills for a subtask, assign it to the Project Lead
 6. Prioritize subtasks based on dependencies and urgency
 7. Create 2-5 subtasks (not more, not less)
 
@@ -175,8 +156,6 @@ RESPOND ONLY WITH VALID JSON (no markdown, no code blocks):
     const response = result.response
     const text = response.text()
 
-
-
     // Parse AI response
     let aiResponse: { subtasks: SubTask[] }
     try {
@@ -203,7 +182,6 @@ RESPOND ONLY WITH VALID JSON (no markdown, no code blocks):
     if (validSubtasks.length === 0) {
       return NextResponse.json({ success: false, error: "No valid subtasks generated" }, { status: 500 })
     }
-
 
     return NextResponse.json(
       {

@@ -34,16 +34,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create new user with organizations array initialized
+    // Create new user (Global)
     const user = await User.create({
       name,
       email: email.toLowerCase(),
       password,
       profilePicture: profilePicture || name.charAt(0).toUpperCase(),
       role: "Member", // Default role
-      organizations: [], // Initialize empty organizations array
-      organizationId: null,
-      currentOrganizationId: null,
     })
 
     // Generate JWT token
@@ -51,7 +48,6 @@ export async function POST(request: NextRequest) {
       userId: user._id.toString(),
       email: user.email,
       role: user.role,
-      organizationId: user.organizationId?.toString(),
     })
 
     // Create response
@@ -65,7 +61,6 @@ export async function POST(request: NextRequest) {
           email: user.email,
           profilePicture: user.profilePicture,
           role: user.role,
-          organizationId: user.organizationId,
         },
         token,
       },

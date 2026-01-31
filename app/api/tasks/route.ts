@@ -15,12 +15,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("organizationId")
-    if (!currentUser || !currentUser.organizationId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
     const body = await request.json()
     const { title, description, projectId, assignedToId, priority, dueDate, skills } = body
 
@@ -32,11 +26,11 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verify project exists and user has access to it (only if projectId is provided and not "myself")
+    // Verify project exists (only if projectId is provided and not "myself")
     if (projectId && projectId !== "myself") {
       try {
         const project = await Project.findById(projectId)
-        if (!project || project.organizationId.toString() !== currentUser.organizationId.toString()) {
+        if (!project) {
           return NextResponse.json({ success: false, error: "Invalid project" }, { status: 400 })
         }
       } catch (error) {
@@ -45,26 +39,23 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Verify assignee exists and is in the same organization
+    // Verify assignee exists
     try {
       const assignee = await User.findById(assignedToId)
       if (!assignee) {
         return NextResponse.json({ success: false, error: "Assignee not found" }, { status: 400 })
-      }
-      if (assignee.organizationId?.toString() !== currentUser.organizationId.toString()) {
-        return NextResponse.json({ success: false, error: "Assignee not in same organization" }, { status: 400 })
       }
     } catch (error) {
       console.error("Error validating assignee:", error)
       return NextResponse.json({ success: false, error: "Invalid assignee ID format" }, { status: 400 })
     }
 
-    // Create new task (use database organizationId, not JWT)
+    // Create new task
     const newTask = new Task({
       title,
       description: description || "",
       projectId: projectId && projectId !== "myself" ? projectId : null, // Set to null for personal tasks
-      organizationId: currentUser.organizationId,
+      // organizationId removed
       assignedToId,
       assignedById: auth.user.userId,
       status: "Todo",

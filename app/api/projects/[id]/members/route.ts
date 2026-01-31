@@ -23,28 +23,15 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: "Member ID is required" }, { status: 400 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId organizations")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!currentUser || !orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    
     // Find the project
     const project = await Project.findById(projectId)
     if (!project) {
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
     }
 
-    // Check if user is the lead of this project (Leads can manage their projects) or Admin in THIS organization
+    // Check permissions
     const isProjectLead = project.leadId?.toString() === auth.user.userId
-
-    const userOrgMembership = currentUser.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-    const isAdmin = userOrgMembership?.role === "Admin"
+    const isAdmin = auth.user.role === "Admin"
 
     if (!isProjectLead && !isAdmin) {
       return NextResponse.json(
@@ -53,28 +40,14 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       )
     }
 
-    // Check if project is in the current organization
-    if (project.organizationId?.toString() !== orgId.toString()) {
-      return NextResponse.json({ success: false, error: "Project not in your organization" }, { status: 403 })
-    }
-
-    // Check if member exists and is in the same organization
-    const member = await User.findById(memberId).select("name email role organizations skills")
+    // Check if member exists
+    const member = await User.findById(memberId).select("name email role skills")
     if (!member) {
       return NextResponse.json({ success: false, error: "Member not found" }, { status: 404 })
     }
 
-    // Check if member is in THIS organization
-    const memberInOrg = member.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!memberInOrg) {
-      return NextResponse.json({ success: false, error: "Member not in your organization" }, { status: 403 })
-    }
-
     // Check if member is already in the project
-    if (project.memberIds.some((id) => id.toString() === memberId)) {
+    if (project.memberIds.some((id: any) => id.toString() === memberId)) {
       return NextResponse.json({ success: false, error: "Member is already in the project" }, { status: 400 })
     }
 
@@ -113,14 +86,6 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId organizations")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!currentUser || !orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
     const { id: projectId } = await params
     const { searchParams } = new URL(request.url)
     const memberId = searchParams.get("memberId")
@@ -129,20 +94,15 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       return NextResponse.json({ success: false, error: "Member ID is required" }, { status: 400 })
     }
 
-   
     // Find the project
     const project = await Project.findById(projectId)
     if (!project) {
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
     }
 
-    // Check if user is the lead of this project or Admin in THIS organization
+    // Check permissions
     const isProjectLead = project.leadId?.toString() === auth.user.userId
-
-    const userOrgMembership = currentUser.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-    const isAdmin = userOrgMembership?.role === "Admin"
+    const isAdmin = auth.user.role === "Admin"
 
     if (!isProjectLead && !isAdmin) {
       return NextResponse.json(
@@ -152,18 +112,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Check if member is in the project
-    if (!project.memberIds.some((id) => id.toString() === memberId)) {
+    if (!project.memberIds.some((id: any) => id.toString() === memberId)) {
       return NextResponse.json({ success: false, error: "Member is not in the project" }, { status: 400 })
     }
 
     // Don't allow removing the project lead
     if (project.leadId?.toString() === memberId) {
       return NextResponse.json({ success: false, error: "Cannot remove the project lead" }, { status: 400 })
-    }
-
-    // Don't allow removing the project creator
-    if (project.createdById && project.createdById.toString() === memberId) {
-      return NextResponse.json({ success: false, error: "Cannot remove the project creator" }, { status: 400 })
     }
 
     // Check if member has any tasks assigned in this project
@@ -180,7 +135,7 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     const member = await User.findById(memberId)
 
     // Remove member from project
-    project.memberIds = project.memberIds.filter((id) => id.toString() !== memberId)
+    project.memberIds = project.memberIds.filter((id: any) => id.toString() !== memberId)
     await project.save()
 
     return NextResponse.json(

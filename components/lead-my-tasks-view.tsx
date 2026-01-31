@@ -15,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 import CreateTaskModal from "./create-task-modal"
 import DivideTaskModal from "./divide-task-modal"
@@ -40,7 +39,6 @@ interface Task {
 }
 
 export default function LeadMyTasksView() {
-  const { currentOrganization, isLoading: orgLoading } = useOrganization()
   const { user } = useAuth()
   const [expandedTask, setExpandedTask] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -61,7 +59,7 @@ export default function LeadMyTasksView() {
 
   // Fetch tasks from API
   const fetchTasks = async () => {
-    if (!user || !currentOrganization) return
+    if (!user) return
 
     try {
       setIsLoading(true)
@@ -91,7 +89,7 @@ export default function LeadMyTasksView() {
 
   useEffect(() => {
     fetchTasks()
-  }, [user, currentOrganization])
+  }, [user])
 
   // Function to update task status
   const handleStatusChange = async (taskId: string, newStatus: "Todo" | "Planning" | "In Progress" | "Done") => {
@@ -246,7 +244,7 @@ export default function LeadMyTasksView() {
   }
 
   // Show loading state
-  if (isLoading || orgLoading) {
+  if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
         <p className="text-muted-foreground">Loading tasks...</p>
@@ -439,9 +437,8 @@ export default function LeadMyTasksView() {
                                 e.stopPropagation()
                                 handleStatusChange(task.id, status as "Todo" | "Planning" | "In Progress" | "Done")
                               }}
-                              className={`px-4 py-2 text-left hover:bg-muted/50 text-sm border-b border-border last:border-0 ${
-                                task.status === status ? "bg-muted font-medium" : ""
-                              }`}
+                              className={`px-4 py-2 text-left hover:bg-muted/50 text-sm border-b border-border last:border-0 ${task.status === status ? "bg-muted font-medium" : ""
+                                }`}
                             >
                               {status}
                             </button>

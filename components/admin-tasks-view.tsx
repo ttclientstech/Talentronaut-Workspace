@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
-import { useOrganization } from "@/lib/organization-context"
+
 import { useRouter } from "next/navigation"
 
 interface AdminTasksViewProps {
@@ -45,11 +45,11 @@ interface Project {
 
 export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTasksViewProps) {
   const { user, refreshUser } = useAuth()
-  const { members } = useOrganization()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [project, setProject] = useState<Project | null>(null)
   const [allTasks, setAllTasks] = useState<Task[]>([])
+  const [members, setMembers] = useState<Array<{ id: string, name: string, role: string }>>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isChangeLeadModalOpen, setIsChangeLeadModalOpen] = useState(false)
@@ -95,7 +95,26 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
 
   useEffect(() => {
     fetchProjectDetails()
+    fetchMembers()
   }, [projectId, user])
+
+  const fetchMembers = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch("/api/members", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+      const data = await response.json()
+      if (data.success && data.members) {
+        setMembers(data.members)
+      }
+    } catch (error) {
+      console.error("Error fetching members:", error)
+    }
+  }
 
   // Function to copy task description
   const handleCopyDescription = async (description: string, taskTitle: string) => {
@@ -166,11 +185,11 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
           prevTasks.map((task) =>
             task.id === selectedTask.id
               ? {
-                  ...task,
-                  assignee: data.task.assignee.name,
-                  assigneeEmail: data.task.assignee.email,
-                  assigneeId: data.task.assignee.id,
-                }
+                ...task,
+                assignee: data.task.assignee.name,
+                assigneeEmail: data.task.assignee.email,
+                assigneeId: data.task.assignee.id,
+              }
               : task,
           ),
         )
@@ -652,26 +671,23 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
                       <button
                         type="button"
                         onClick={() => setSelectedNewAssignee(project.leadId)}
-                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                          selectedNewAssignee === project.leadId
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-muted/50 text-foreground"
-                        }`}
+                        className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${selectedNewAssignee === project.leadId
+                          ? "bg-primary text-primary-foreground"
+                          : "hover:bg-muted/50 text-foreground"
+                          }`}
                       >
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                          selectedNewAssignee === project.leadId
-                            ? "bg-primary-foreground/20"
-                            : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                        }`}>
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${selectedNewAssignee === project.leadId
+                          ? "bg-primary-foreground/20"
+                          : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                          }`}>
                           {project.lead.charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 text-left">
                           <p className="font-medium text-sm">{project.lead}</p>
-                          <p className={`text-xs ${
-                            selectedNewAssignee === project.leadId
-                              ? "text-primary-foreground/70"
-                              : "text-muted-foreground"
-                          }`}>Lead • {project.leadEmail}</p>
+                          <p className={`text-xs ${selectedNewAssignee === project.leadId
+                            ? "text-primary-foreground/70"
+                            : "text-muted-foreground"
+                            }`}>Lead • {project.leadEmail}</p>
                         </div>
                         {selectedNewAssignee === project.leadId && (
                           <div className="w-5 h-5 rounded-full bg-primary-foreground flex items-center justify-center">
@@ -691,43 +707,39 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
                         const roleColor = member.role === "Admin"
                           ? "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400"
                           : member.role === "Lead"
-                          ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                          : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
+                            ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                            : "bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-400"
 
                         return (
                           <button
                             key={member.id}
                             type="button"
                             onClick={() => setSelectedNewAssignee(member.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                              selectedNewAssignee === member.id
-                                ? "bg-primary text-primary-foreground"
-                                : "hover:bg-muted/50 text-foreground"
-                            }`}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${selectedNewAssignee === member.id
+                              ? "bg-primary text-primary-foreground"
+                              : "hover:bg-muted/50 text-foreground"
+                              }`}
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
-                              selectedNewAssignee === member.id
-                                ? "bg-primary-foreground/20"
-                                : roleColor
-                            }`}>
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${selectedNewAssignee === member.id
+                              ? "bg-primary-foreground/20"
+                              : roleColor
+                              }`}>
                               {member.name.charAt(0).toUpperCase()}
                             </div>
                             <div className="flex-1 text-left">
                               <p className="font-medium text-sm flex items-center gap-2">
                                 {member.name}
                                 {isCurrentUser && (
-                                  <span className={`text-xs px-1.5 py-0.5 rounded ${
-                                    selectedNewAssignee === member.id
-                                      ? "bg-primary-foreground/20 text-primary-foreground"
-                                      : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                                  }`}>You</span>
+                                  <span className={`text-xs px-1.5 py-0.5 rounded ${selectedNewAssignee === member.id
+                                    ? "bg-primary-foreground/20 text-primary-foreground"
+                                    : "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
+                                    }`}>You</span>
                                 )}
                               </p>
-                              <p className={`text-xs ${
-                                selectedNewAssignee === member.id
-                                  ? "text-primary-foreground/70"
-                                  : "text-muted-foreground"
-                              }`}>{member.role} • {member.email}</p>
+                              <p className={`text-xs ${selectedNewAssignee === member.id
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground"
+                                }`}>{member.role} • {member.email}</p>
                             </div>
                             {selectedNewAssignee === member.id && (
                               <div className="w-5 h-5 rounded-full bg-primary-foreground flex items-center justify-center">
@@ -742,11 +754,11 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
 
                     {/* Show message if no members available */}
                     {project.members.filter((m) => m.id !== selectedTask.assigneeId).length === 0 &&
-                     (!project.leadId || project.leadId === selectedTask.assigneeId) && (
-                      <div className="text-center py-8 text-muted-foreground text-sm">
-                        No other team members available in this project
-                      </div>
-                    )}
+                      (!project.leadId || project.leadId === selectedTask.assigneeId) && (
+                        <div className="text-center py-8 text-muted-foreground text-sm">
+                          No other team members available in this project
+                        </div>
+                      )}
                   </div>
 
                   <p className="text-xs text-muted-foreground flex items-center gap-1">

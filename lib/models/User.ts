@@ -33,18 +33,15 @@ export interface IUser extends Document {
   _id: mongoose.Types.ObjectId
   name: string
   email: string
-  password: string
+  password?: string // Made optional
   profilePicture?: string
   role: "Admin" | "Lead" | "Member"
-  organizationId?: mongoose.Types.ObjectId // @deprecated - Use organizations array instead
-  organizations: {
-    organizationId: mongoose.Types.ObjectId
-    role: "Admin" | "Lead" | "Member"
-    joinedAt: Date
-  }[]
-  currentOrganizationId?: mongoose.Types.ObjectId // The active organization user is currently working in
   skills?: string[]
   schedule?: Schedule
+  accessCode: string // Made required
+  phoneNumber?: string
+  domain?: string
+  joinDate?: Date
   createdAt: Date
   updatedAt: Date
   comparePassword(candidatePassword: string): Promise<boolean>
@@ -69,9 +66,9 @@ const UserSchema = new Schema<IUser>(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: false, // Made optional
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, // Don't include password in queries by default
+      select: false,
     },
     profilePicture: {
       type: String,
@@ -82,34 +79,8 @@ const UserSchema = new Schema<IUser>(
       enum: ["Admin", "Lead", "Member"],
       default: "Member",
     },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      default: null,
-    },
-    organizations: [
-      {
-        organizationId: {
-          type: Schema.Types.ObjectId,
-          ref: "Organization",
-          required: true,
-        },
-        role: {
-          type: String,
-          enum: ["Admin", "Lead", "Member"],
-          required: true,
-        },
-        joinedAt: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
-    currentOrganizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      default: null,
-    },
+    // Organizations fields removed for single-company architecture
+
     skills: {
       type: [String],
       default: [],
@@ -129,6 +100,21 @@ const UserSchema = new Schema<IUser>(
         timeBlocks: [],
       },
     },
+    accessCode: {
+      type: String,
+      required: [true, "Access code is required"], // Made required
+      unique: true,
+    },
+    phoneNumber: {
+      type: String,
+    },
+    domain: {
+      type: String,
+    },
+    joinDate: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,
@@ -136,18 +122,18 @@ const UserSchema = new Schema<IUser>(
 )
 
 // Index for faster queries (email index is already created by unique: true)
-UserSchema.index({ organizationId: 1 })
-UserSchema.index({ currentOrganizationId: 1 })
-UserSchema.index({ "organizations.organizationId": 1 })
+// Organization indexes removed
 
-// Method to compare password
+// Method to compare password (only if password exists)
 UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+  if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password)
 }
 
 // Hash password before saving
 UserSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
+  // Only hash if password exists and is modified
+  if (!this.isModified("password") || !this.password) {
     return next()
   }
 
@@ -156,8 +142,6 @@ UserSchema.pre("save", async function (next) {
   next()
 })
 
-// Prevent model overwrite upon initial compile
-// Force reload the model to ensure schema changes take effect
 if (mongoose.models.User) {
   delete mongoose.models.User
 }

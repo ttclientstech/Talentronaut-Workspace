@@ -16,14 +16,9 @@ export default function Home() {
         return
       }
 
-      // Authenticated - check if user has organization
-      if (!user.organizationId) {
-        // No organization - redirect to welcome page
-        router.push("/welcome")
-        return
-      }
+      // Authenticated - redirect based on role
+      // Since we removed onboarding, we assume user is set up or admin handles it
 
-      // Has organization - redirect based on role
       switch (user.role) {
         case "Admin":
           router.push("/admin")

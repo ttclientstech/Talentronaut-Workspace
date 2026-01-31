@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/middleware/auth"
 import Project from "@/lib/models/Project"
 import Task from "@/lib/models/Task"
-import User from "@/lib/models/User"
 import connectDB from "@/lib/db/mongodb"
 import mongoose from "mongoose"
 
@@ -17,17 +16,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId organizations")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!currentUser || !orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
     const { id: projectId } = await params
-
-  
 
     // Fetch project
     const project = await Project.findById(projectId)
@@ -35,13 +24,10 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
     }
 
-    // Check if project is in the current organization
-    if (project.organizationId.toString() !== orgId.toString()) {
-      return NextResponse.json({ success: false, error: "Unauthorized to access this project" }, { status: 403 })
-    }
-
     // Check if user is the lead of this project
-    if (project.leadId.toString() !== auth.user.userId) {
+    // Also allow Admins to close projects if needed, but per requirement "Lead can close"
+    // Let's stick to Lead only for closing, or Admin as backup.
+    if (project.leadId.toString() !== auth.user.userId && auth.user.role !== "Admin") {
       return NextResponse.json(
         { success: false, error: "Only the project lead can close the project" },
         { status: 403 },
@@ -84,7 +70,6 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
     project.progress = 100
     await project.save()
 
-    
     return NextResponse.json(
       {
         success: true,

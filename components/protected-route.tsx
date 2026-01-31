@@ -25,7 +25,7 @@ export default function ProtectedRoute({ children, allowedRoles, requireOrganiza
       // Check if user role is allowed
       if (allowedRoles && !allowedRoles.includes(user.role)) {
         // Redirect based on actual role
-        
+
         if (user.role === "Admin") {
           router.push("/admin")
         } else if (user.role === "Lead") {
@@ -37,10 +37,11 @@ export default function ProtectedRoute({ children, allowedRoles, requireOrganiza
       }
 
       // Check if organization is required
-      if (requireOrganization && !user.organizationId) {
+      // Organization check removed
+      /* if (requireOrganization && !user.organizationId) {
         router.push("/welcome")
         return
-      }
+      } */
     }
   }, [isLoading, isAuthenticated, user, user?.role, allowedRoles, requireOrganization, router])
 
@@ -67,9 +68,10 @@ export default function ProtectedRoute({ children, allowedRoles, requireOrganiza
   }
 
   // Organization required but not present
-  if (requireOrganization && !user.organizationId) {
+  // Organization required check removed
+  /* if (requireOrganization && !user.organizationId) {
     return null
-  }
+  } */
 
   // All checks passed - render children
   return <>{children}</>

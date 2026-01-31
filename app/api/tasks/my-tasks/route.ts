@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateUser } from "@/lib/middleware/auth"
 import Task from "@/lib/models/Task"
-import Project from "@/lib/models/Project"
 import User from "@/lib/models/User"
 import connectDB from "@/lib/db/mongodb"
 
@@ -15,16 +14,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const user = await User.findById(auth.user.userId).select("organizationId name")
-    if (!user || !user.organizationId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
+    const user = await User.findById(auth.user.userId).select("name")
 
-    // Fetch tasks assigned to the current user
+    // Fetch tasks assigned to the current user (Global)
     const tasks = await Task.find({
       assignedToId: auth.user.userId,
-      organizationId: user.organizationId,
     })
       .populate("projectId", "name")
       .populate("assignedById", "name email role")
@@ -36,7 +30,7 @@ export async function GET(request: NextRequest) {
       id: task._id.toString(),
       title: task.title,
       description: task.description || "",
-      assignee: user.name || "Unknown",
+      assignee: user?.name || "Unknown",
       assignedBy: task.assignedById?.name || "Unknown",
       assignedByEmail: task.assignedById?.email || "",
       assignedByRole: task.assignedById?.role || "",

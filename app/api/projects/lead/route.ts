@@ -15,27 +15,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    
-
-    // Fetch projects where the current user is the lead in the current organization
+    // Fetch projects where the current user is the lead (Global scope)
     const projects = await Project.find({
-      organizationId: orgId,
       leadId: auth.user.userId,
     })
       .populate("leadId", "name email")
       .populate("memberIds", "name")
       .sort({ createdAt: -1 })
       .lean()
-
-    
 
     // For each project, get task statistics and calculate progress
     const projectsWithDetails = await Promise.all(

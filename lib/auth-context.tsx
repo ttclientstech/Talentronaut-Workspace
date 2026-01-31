@@ -8,7 +8,6 @@ interface User {
   name: string
   email: string
   role: "Admin" | "Lead" | "Member"
-  organizationId?: string
   profilePicture?: string
 }
 
@@ -16,8 +15,7 @@ interface AuthContextType {
   user: User | null
   isLoading: boolean
   isAuthenticated: boolean
-  login: (email: string, password: string) => Promise<void>
-  signup: (name: string, email: string, password: string) => Promise<void>
+  loginWithAccessCode: (accessCode: string) => Promise<void>
   logout: () => Promise<void>
   refreshUser: () => Promise<void>
 }
@@ -32,8 +30,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Check if user is authenticated on mount
   useEffect(() => {
     checkAuth()
-    // Removed automatic role checking to prevent UI reloads
-    // Role changes will be detected on page refresh or navigation
   }, [])
 
   const checkAuth = async (showLoading = true) => {
@@ -59,7 +55,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               name: data.user.name,
               email: data.user.email,
               role: data.user.role,
-              organizationId: data.user.organizationId,
               profilePicture: data.user.profilePicture,
             }
             setUser(userData)
@@ -90,15 +85,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const login = async (email: string, password: string) => {
+  const loginWithAccessCode = async (accessCode: string) => {
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/login-with-code", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         credentials: "include",
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ accessCode }),
       })
 
       const data = await response.json()
@@ -113,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           name: data.user.name,
           email: data.user.email,
           role: data.user.role,
-          organizationId: data.user.organizationId,
           profilePicture: data.user.profilePicture,
         }
         setUser(userData)
@@ -121,43 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         localStorage.setItem("token", data.token)
       }
     } catch (error) {
-      console.error("Login error:", error)
-      throw error
-    }
-  }
-
-  const signup = async (name: string, email: string, password: string) => {
-    try {
-      const response = await fetch("/api/auth/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ name, email, password }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || "Signup failed")
-      }
-
-      if (data.success && data.user) {
-        const userData = {
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          role: data.user.role,
-          organizationId: data.user.organizationId,
-          profilePicture: data.user.profilePicture,
-        }
-        setUser(userData)
-        localStorage.setItem("user", JSON.stringify(userData))
-        localStorage.setItem("token", data.token)
-      }
-    } catch (error) {
-      console.error("Signup error:", error)
+      console.error("Login with code error:", error)
       throw error
     }
   }
@@ -172,47 +130,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error("Logout error:", error)
     } finally {
       setUser(null)
-      localStorage.removeItem("user")
-      localStorage.removeItem("token")
-      localStorage.removeItem("userRole")
-      localStorage.removeItem("pendingOrg")
-      localStorage.removeItem("memberStatus")
-      localStorage.removeItem("hasSeenWelcome")
+      localStorage.clear() // Clear all
       router.push("/login")
     }
   }
 
   const refreshUser = async () => {
-    try {
-      // Always fetch fresh user data from API
-      const response = await fetch("/api/auth/me", {
-        credentials: "include",
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.user) {
-          const userData = {
-            id: data.user.id,
-            name: data.user.name,
-            email: data.user.email,
-            role: data.user.role,
-            organizationId: data.user.organizationId,
-            profilePicture: data.user.profilePicture,
-          }
-          setUser(userData)
-          localStorage.setItem("user", JSON.stringify(userData))
-
-          // Clear any pending org info if user now has an organization
-          if (data.user.organizationId) {
-            localStorage.removeItem("pendingOrg")
-            localStorage.removeItem("memberStatus")
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Refresh user failed:", error)
-    }
+    await checkAuth(false)
   }
 
   return (
@@ -221,8 +145,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoading,
         isAuthenticated: !!user,
-        login,
-        signup,
+        loginWithAccessCode,
         logout,
         refreshUser,
       }}

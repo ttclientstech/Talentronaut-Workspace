@@ -15,18 +15,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
     const { id } = await params
 
-    
-    // Fetch project with optional createdById population for backward compatibility
+    // Fetch project
     const project = await Project.findById(id)
       .populate({ path: "createdById", select: "name email role", strictPopulate: false })
       .populate("leadId", "name email")
@@ -35,13 +26,6 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 
     if (!project) {
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
-    }
-
-   
-
-    // Check if user has access to this project (same organization)
-    if (project.organizationId.toString() !== orgId.toString()) {
-      return NextResponse.json({ success: false, error: "Unauthorized to access this project" }, { status: 403 })
     }
 
     // Fetch all tasks for this project
@@ -115,20 +99,8 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get current user's organizationId from database (not JWT)
-    const user = await User.findById(auth.user.userId).select("currentOrganizationId organizationId organizations")
-    const orgId = user?.currentOrganizationId || user?.organizationId
-
-    if (!user || !orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    // Only Admin in THIS organization can update project lead
-    const userOrgMembership = user.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!userOrgMembership || userOrgMembership.role !== "Admin") {
+    // Only Admin can update project lead (simplification for single tenant)
+    if (auth.user.role !== "Admin") {
       return NextResponse.json(
         { success: false, error: "Only Admins can update project lead" },
         { status: 403 },
@@ -138,8 +110,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     const { id } = await params
     const body = await request.json()
     const { leadId } = body
-
-    
 
     // Validate leadId
     if (!leadId) {
@@ -152,24 +122,10 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
       return NextResponse.json({ success: false, error: "Project not found" }, { status: 404 })
     }
 
-    // Check if user has access to this project (same organization)
-    if (project.organizationId.toString() !== orgId.toString()) {
-      return NextResponse.json({ success: false, error: "Unauthorized to update this project" }, { status: 403 })
-    }
-
-    // Verify new lead exists and is in the same organization
-    const newLead = await User.findById(leadId).select("name email organizations currentOrganizationId role")
+    // Verify new lead exists
+    const newLead = await User.findById(leadId).select("name email role")
     if (!newLead) {
       return NextResponse.json({ success: false, error: "New lead not found" }, { status: 404 })
-    }
-
-    // Check if new lead is in THIS organization
-    const newLeadInOrg = newLead.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!newLeadInOrg) {
-      return NextResponse.json({ success: false, error: "Invalid lead selection - not in your organization" }, { status: 400 })
     }
 
     // Store the old lead ID before updating
@@ -189,68 +145,30 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     project.leadId = leadId
 
     // Ensure new lead is in memberIds if not already
-    if (!project.memberIds.some((memberId) => memberId.toString() === leadId)) {
+    if (!project.memberIds.some((memberId: any) => memberId.toString() === leadId)) {
       project.memberIds.push(leadId)
     }
 
-    // Promote new lead to "Lead" role in THIS organization if they're currently a "Member"
-    // Initialize organizations array if it doesn't exist
-    if (!newLead.organizations) {
-      newLead.organizations = []
-    }
-
-    const orgIndex = newLead.organizations.findIndex(
-      (org: any) => org.organizationId.toString() === project.organizationId.toString(),
-    )
-
-    if (orgIndex !== -1) {
-      // Update role in organizations array if currently Member
-      if (newLead.organizations[orgIndex].role === "Member") {
-        newLead.organizations[orgIndex].role = "Lead"
-        
-      }
-    }
-
-    // Update global role if this is their current organization
-    if (newLead.currentOrganizationId?.toString() === project.organizationId.toString() && newLead.role === "Member") {
+    // Update global role if necessary
+    if (newLead.role === "Member") {
       newLead.role = "Lead"
+      await newLead.save()
     }
 
-    await newLead.save()
     await project.save()
 
-    // Check if the old lead should be demoted to "Member" in THIS organization
-    // Only demote if they're not leading any other projects in THIS organization
+    // Check if the old lead should be demoted to "Member"
+    // Only demote if they're not leading any other projects
     if (oldLeadId !== leadId) {
       const projectsLedByOldLead = await Project.countDocuments({
         leadId: oldLeadId,
-        organizationId: project.organizationId,
       })
 
       if (projectsLedByOldLead === 0) {
-        // Old lead is not leading any projects in this org anymore, demote to Member
         const oldLead = await User.findById(oldLeadId)
-        if (oldLead) {
-          // Initialize organizations array if it doesn't exist
-          if (!oldLead.organizations) {
-            oldLead.organizations = []
-          }
-
-          const oldLeadOrgIndex = oldLead.organizations.findIndex(
-            (org: any) => org.organizationId.toString() === project.organizationId.toString(),
-          )
-
-          if (oldLeadOrgIndex !== -1 && oldLead.organizations[oldLeadOrgIndex].role === "Lead") {
-            oldLead.organizations[oldLeadOrgIndex].role = "Member"
-           
-
-            // Update global role if this is their current organization
-            if (oldLead.currentOrganizationId?.toString() === project.organizationId.toString() && oldLead.role === "Lead") {
-              oldLead.role = "Member"
-            }
-
-            await oldLead.save()
-          }
+        if (oldLead && oldLead.role === "Lead") {
+          oldLead.role = "Member"
+          await oldLead.save()
         }
       }
     }

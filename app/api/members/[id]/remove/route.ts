@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
 import { authenticateUser, forbiddenResponse } from "@/lib/middleware/auth"
-import Organization from "@/lib/models/Organization"
 import User from "@/lib/models/User"
 import Task from "@/lib/models/Task"
 import Project from "@/lib/models/Project"
@@ -24,55 +23,20 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
 
     const { id: memberId } = await params
 
-    // Get current user's currentOrganizationId from database (not JWT)
-    const currentUser = await User.findById(auth.user.userId).select("currentOrganizationId organizationId")
-    const orgId = currentUser?.currentOrganizationId || currentUser?.organizationId
-
-    if (!currentUser || !orgId) {
-      return NextResponse.json({ success: false, error: "User not in an organization" }, { status: 400 })
-    }
-
-    
-
-    // Get the member to remove
-    const memberToRemove = await User.findById(memberId).select("name email organizations")
-    if (!memberToRemove) {
-      return NextResponse.json({ success: false, error: "Member not found" }, { status: 404 })
-    }
-
-    // Check if member is in the same organization (check organizations array)
-    const memberInOrg = memberToRemove.organizations?.find(
-      (org: any) => org.organizationId.toString() === orgId.toString()
-    )
-
-    if (!memberInOrg) {
-      
-      return forbiddenResponse("Member is not in your organization")
-    }
-
-   
-    // Prevent removing the admin (creator) of the organization
-    const organization = await Organization.findById(orgId)
-    if (!organization) {
-      return NextResponse.json({ success: false, error: "Organization not found" }, { status: 404 })
-    }
-
-    if (organization.adminId.toString() === memberId) {
-      return NextResponse.json(
-        { success: false, error: "Cannot remove the organization creator/admin" },
-        { status: 400 },
-      )
-    }
-
     // Prevent removing yourself
     if (memberId === auth.user.userId) {
       return NextResponse.json({ success: false, error: "You cannot remove yourself" }, { status: 400 })
     }
 
-    // Check if member has any assigned tasks
+    // Get the member to remove
+    const memberToRemove = await User.findById(memberId).select("name email role")
+    if (!memberToRemove) {
+      return NextResponse.json({ success: false, error: "Member not found" }, { status: 404 })
+    }
+
+    // Check if member has any assigned tasks (Global check)
     const assignedTasks = await Task.countDocuments({
       assignedToId: memberId,
-      organizationId: currentUser.organizationId,
     })
 
     if (assignedTasks > 0) {
@@ -88,10 +52,9 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       )
     }
 
-    // Check if member is leading any projects
+    // Check if member is leading any projects (Global check)
     const leadingProjects = await Project.countDocuments({
       leadId: memberId,
-      organizationId: currentUser.organizationId,
     })
 
     if (leadingProjects > 0) {
@@ -108,11 +71,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
     }
 
     // Check if member is part of any project teams (but not leading)
+    // Note: Project members array check
     const projectMemberships = await Project.countDocuments({
-      organizationId: currentUser.organizationId,
       memberIds: memberId,
     })
 
+    // Optionally we could auto-remove them from projects, but for safety we might warn
+    // Actually, in the previous logic it warned. Let's keep the warning to be safe.
     if (projectMemberships > 0) {
       return NextResponse.json(
         {
@@ -126,64 +91,13 @@ export async function DELETE(request: NextRequest, { params }: { params: Promise
       )
     }
 
-    // All checks passed, remove member from organization
-    organization.members = organization.members.filter(
-      (member: any) => member.userId.toString() !== memberId,
-    )
-    await organization.save()
-
-
-    // Update user's organizations array - remove this organization
-    const userToUpdate = await User.findById(memberId)
-    if (!userToUpdate) {
-      return NextResponse.json({ success: false, error: "User not found" }, { status: 404 })
-    }
-
-    // Initialize organizations array if it doesn't exist (for users created before migration)
-    if (!userToUpdate.organizations) {
-      userToUpdate.organizations = []
-    }
-
-    // Remove the organization from user's organizations array
-    userToUpdate.organizations = userToUpdate.organizations.filter(
-      (org: any) => org.organizationId.toString() !== orgId.toString(),
-    )
-
-    let switchedToOrganization = null
-
-    // Check if user has other organizations
-    if (userToUpdate.organizations.length > 0) {
-      // User has other organizations, switch to the first one
-      const newOrg = userToUpdate.organizations[0]
-      userToUpdate.currentOrganizationId = newOrg.organizationId
-      userToUpdate.organizationId = newOrg.organizationId // Keep for backward compatibility
-      userToUpdate.role = newOrg.role
-
-      // Get organization details for response
-      const newOrgDetails = await Organization.findById(newOrg.organizationId).select("name")
-      if (newOrgDetails) {
-        switchedToOrganization = {
-          id: newOrg.organizationId.toString(),
-          name: newOrgDetails.name,
-          role: newOrg.role,
-        }
-        
-      }
-    } else {
-      // No other organizations, clear organization references
-      userToUpdate.currentOrganizationId = undefined
-      userToUpdate.organizationId = undefined // Keep for backward compatibility
-      userToUpdate.role = "Member"
-
-    }
-
-    await userToUpdate.save()
+    // All checks passed, delete the user
+    await User.findByIdAndDelete(memberId)
 
     return NextResponse.json(
       {
         success: true,
-        message: `${memberToRemove.name} has been removed from the organization`,
-        switchedTo: switchedToOrganization,
+        message: `${memberToRemove.name} has been removed from the application`,
       },
       { status: 200 },
     )

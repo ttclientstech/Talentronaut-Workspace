@@ -11,7 +11,7 @@ export interface ITask extends Document {
   title: string
   description?: string
   projectId?: mongoose.Types.ObjectId // Optional for personal tasks
-  organizationId: mongoose.Types.ObjectId
+  // organizationId removed
   assignedToId: mongoose.Types.ObjectId
   assignedById: mongoose.Types.ObjectId
   status: "Todo" | "Planning" | "In Progress" | "Done" | "Blocked"
@@ -52,11 +52,7 @@ const TaskSchema = new Schema<ITask>(
         message: "Invalid project ID",
       },
     },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      required: [true, "Organization is required"],
-    },
+    // organizationId removed
     assignedToId: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -110,7 +106,7 @@ const TaskSchema = new Schema<ITask>(
 )
 
 // Indexes for faster queries
-TaskSchema.index({ organizationId: 1 })
+// TaskSchema.index({ organizationId: 1 })
 TaskSchema.index({ projectId: 1 })
 TaskSchema.index({ assignedToId: 1 })
 TaskSchema.index({ status: 1 })

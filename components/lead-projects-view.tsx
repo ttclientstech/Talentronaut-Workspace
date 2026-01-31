@@ -1,12 +1,11 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Search, Filter, MoreVertical, RefreshCw } from "lucide-react"
+import { Search, MoreVertical, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { useAuth } from "@/lib/auth-context"
-import { useOrganization } from "@/lib/organization-context"
 
 interface LeadProjectsViewProps {
   onProjectSelect: (projectId: string) => void
@@ -27,7 +26,6 @@ interface Project {
 
 export default function LeadProjectsView({ onProjectSelect }: LeadProjectsViewProps) {
   const { user } = useAuth()
-  const { currentOrganization } = useOrganization()
   const [leadProjects, setLeadProjects] = useState<Project[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -35,7 +33,7 @@ export default function LeadProjectsView({ onProjectSelect }: LeadProjectsViewPr
 
   // Fetch projects led by current user
   const fetchLeadProjects = async () => {
-    if (!user || !currentOrganization) return
+    if (!user) return
 
     try {
       setIsLoading(true)
@@ -65,7 +63,7 @@ export default function LeadProjectsView({ onProjectSelect }: LeadProjectsViewPr
 
   useEffect(() => {
     fetchLeadProjects()
-  }, [user, currentOrganization])
+  }, [user])
 
   // Filter projects based on search query
   const filteredProjects = leadProjects.filter(
@@ -144,65 +142,65 @@ export default function LeadProjectsView({ onProjectSelect }: LeadProjectsViewPr
       {filteredProjects.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProjects.map((project) => (
-          <Card
-            key={project.id}
-            className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group"
-            onClick={() => onProjectSelect(project.id)}
-          >
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between mb-2">
-                <CardTitle className="text-lg group-hover:text-primary transition-colors">{project.name}</CardTitle>
-                <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
-              </div>
-              <CardDescription>{project.description}</CardDescription>
-            </CardHeader>
-
-            <CardContent className="space-y-4">
-              {/* Progress Bar */}
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">Progress</span>
-                  <span className="text-sm text-muted-foreground">{project.progress}%</span>
+            <Card
+              key={project.id}
+              className="hover:shadow-lg transition-shadow cursor-pointer overflow-hidden group"
+              onClick={() => onProjectSelect(project.id)}
+            >
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between mb-2">
+                  <CardTitle className="text-lg group-hover:text-primary transition-colors">{project.name}</CardTitle>
+                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
                 </div>
-                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                  <div className="h-full bg-primary transition-all" style={{ width: `${project.progress}%` }} />
-                </div>
-              </div>
+                <CardDescription>{project.description}</CardDescription>
+              </CardHeader>
 
-              {/* Project Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <CardContent className="space-y-4">
+                {/* Progress Bar */}
                 <div>
-                  <p className="text-muted-foreground">Team</p>
-                  <p className="font-medium text-foreground">{project.members} members</p>
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-foreground">Progress</span>
+                    <span className="text-sm text-muted-foreground">{project.progress}%</span>
+                  </div>
+                  <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                    <div className="h-full bg-primary transition-all" style={{ width: `${project.progress}%` }} />
+                  </div>
                 </div>
-                <div>
-                  <p className="text-muted-foreground">Tasks</p>
-                  {project.tasks > 0 ? (
-                    <p className="font-medium text-foreground">
-                      {project.completedTasks || 0}/{project.tasks}
-                    </p>
-                  ) : (
-                    <p className="font-medium text-muted-foreground italic">None yet</p>
-                  )}
-                </div>
-              </div>
 
-              {/* Status and Priority */}
-              <div className="flex gap-2">
-                <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/20 text-primary border border-primary/30">
-                  {project.status}
-                </span>
-                <span
-                  className={`text-xs font-medium px-2 py-1 rounded-full border ${getPriorityColor(project.priority)}`}
-                >
-                  {project.priority}
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                {/* Project Info */}
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-muted-foreground">Team</p>
+                    <p className="font-medium text-foreground">{project.members} members</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">Tasks</p>
+                    {project.tasks > 0 ? (
+                      <p className="font-medium text-foreground">
+                        {project.completedTasks || 0}/{project.tasks}
+                      </p>
+                    ) : (
+                      <p className="font-medium text-muted-foreground italic">None yet</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Status and Priority */}
+                <div className="flex gap-2">
+                  <span className="text-xs font-medium px-2 py-1 rounded-full bg-primary/20 text-primary border border-primary/30">
+                    {project.status}
+                  </span>
+                  <span
+                    className={`text-xs font-medium px-2 py-1 rounded-full border ${getPriorityColor(project.priority)}`}
+                  >
+                    {project.priority}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       ) : (
         <div className="text-center py-12">
@@ -217,4 +215,3 @@ export default function LeadProjectsView({ onProjectSelect }: LeadProjectsViewPr
     </div>
   )
 }
-

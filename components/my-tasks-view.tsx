@@ -15,7 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 import CreateTaskModal from "./create-task-modal"
 import { toast } from "sonner"
@@ -34,7 +33,6 @@ interface Task {
 }
 
 export default function MyTasksView() {
-  const { currentOrganization, isLoading: orgLoading } = useOrganization()
   const { user } = useAuth()
   const [expandedTask, setExpandedTask] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
@@ -53,7 +51,7 @@ export default function MyTasksView() {
 
   // Fetch tasks from API
   const fetchTasks = async () => {
-    if (!user || !currentOrganization) return
+    if (!user) return
 
     try {
       setIsLoading(true)
@@ -82,7 +80,7 @@ export default function MyTasksView() {
 
   useEffect(() => {
     fetchTasks()
-  }, [user, currentOrganization])
+  }, [user])
 
   // Function to copy task description
   const handleCopyDescription = async (description: string, taskTitle: string) => {
@@ -237,7 +235,7 @@ export default function MyTasksView() {
   }
 
   // Show loading state
-  if (isLoading || orgLoading) {
+  if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
         <p className="text-muted-foreground">Loading tasks...</p>
@@ -424,9 +422,8 @@ export default function MyTasksView() {
                                 e.stopPropagation()
                                 handleStatusChange(task.id, status as "Todo" | "Planning" | "In Progress" | "Done")
                               }}
-                              className={`px-4 py-2 text-left hover:bg-muted/50 text-sm border-b border-border last:border-0 ${
-                                task.status === status ? "bg-muted font-medium" : ""
-                              }`}
+                              className={`px-4 py-2 text-left hover:bg-muted/50 text-sm border-b border-border last:border-0 ${task.status === status ? "bg-muted font-medium" : ""
+                                }`}
                             >
                               {status}
                             </button>

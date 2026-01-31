@@ -6,7 +6,6 @@ import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 
 interface CreateTaskModalProps {
@@ -19,11 +18,18 @@ interface Project {
   name: string
 }
 
+interface Member {
+  id: string
+  name: string
+  role: string
+}
+
 export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
-  const { currentOrganization, members, isLoading } = useOrganization()
   const { user } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
+  const [members, setMembers] = useState<Member[]>([])
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false)
 
   const [formData, setFormData] = useState({
     title: "",
@@ -37,12 +43,41 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
 
+  // Fetch members to populate the assignee dropdown
+  const fetchMembers = async () => {
+    try {
+      setIsLoadingMembers(true)
+      const token = localStorage.getItem("token")
+      const response = await fetch("/api/members", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.members) {
+        setMembers(data.members.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          role: m.role
+        })))
+      }
+    } catch (error) {
+      console.error("Error fetching members:", error)
+    } finally {
+      setIsLoadingMembers(false)
+    }
+  }
+
   // Fetch projects when modal opens
   useEffect(() => {
-    if (isOpen && user && currentOrganization) {
+    if (isOpen && user) {
       fetchProjects()
+      fetchMembers()
     }
-  }, [isOpen, user, currentOrganization])
+  }, [isOpen, user])
 
   const fetchProjects = async () => {
     try {
@@ -172,9 +207,6 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
 
   if (!isOpen) return null
 
-  // Don't render modal content if organization data is not loaded yet
-  if (isLoading || !currentOrganization) return null
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <Card className="w-full max-w-md border-border shadow-lg max-h-[90vh] overflow-y-auto">
@@ -239,9 +271,8 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                 name="projectId"
                 value={formData.projectId}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${
-                  errors.projectId ? "border-destructive" : ""
-                }`}
+                className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${errors.projectId ? "border-destructive" : ""
+                  }`}
                 aria-invalid={!!errors.projectId}
                 disabled={isLoadingProjects}
               >
@@ -267,12 +298,12 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                   name="assignedToId"
                   value={formData.assignedToId}
                   onChange={handleInputChange}
-                  className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${
-                    errors.assignedToId ? "border-destructive" : ""
-                  }`}
+                  className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${errors.assignedToId ? "border-destructive" : ""
+                    }`}
                   aria-invalid={!!errors.assignedToId}
+                  disabled={isLoadingMembers}
                 >
-                  <option value="">Select an assignee</option>
+                  <option value="">{isLoadingMembers ? "Loading members..." : "Select an assignee"}</option>
                   {members.map((member) => (
                     <option key={member.id} value={member.id}>
                       {member.name} ({member.role})
@@ -299,11 +330,10 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                         priority,
                       }))
                     }
-                    className={`px-3 py-2 rounded-md text-xs font-medium transition-all border ${
-                      formData.priority === priority
+                    className={`px-3 py-2 rounded-md text-xs font-medium transition-all border ${formData.priority === priority
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-input border-border text-foreground hover:border-primary/50"
-                    }`}
+                      }`}
                   >
                     {priority}
                   </button>

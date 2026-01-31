@@ -3,7 +3,6 @@
 import { ArrowRight, Users, Briefcase, CheckSquare, Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 import { useState, useEffect } from "react"
 
@@ -27,9 +26,9 @@ export default function LeadDashboard({
   onOpenAITaskAssigner,
   onOpenManageTeam,
 }: LeadDashboardProps) {
-  const { currentOrganization, members } = useOrganization()
   const { user } = useAuth()
   const [leadProjects, setLeadProjects] = useState<Project[]>([])
+  const [memberCount, setMemberCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
   // Fetch projects led by the current user
@@ -40,6 +39,8 @@ export default function LeadDashboard({
       try {
         setIsLoading(true)
         const token = localStorage.getItem("token")
+
+        // Fetch projects
         const response = await fetch("/api/projects/lead", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -52,8 +53,23 @@ export default function LeadDashboard({
         if (data.success) {
           setLeadProjects(data.projects)
         }
+
+        // Fetch members count (all members in the company)
+        // Alternatively we could fetch only members in lead's projects if that's the intent
+        // based on the previous code using `members` from context, it was likely all org members
+        const membersResponse = await fetch("/api/members", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        })
+        const membersData = await membersResponse.json()
+        if (membersData.success && membersData.members) {
+          setMemberCount(membersData.members.length)
+        }
+
       } catch (error) {
-        console.error("Error fetching lead projects:", error)
+        console.error("Error fetching lead dashboard data:", error)
       } finally {
         setIsLoading(false)
       }
@@ -63,12 +79,10 @@ export default function LeadDashboard({
   }, [user])
 
   const activeProjects = leadProjects.length
-  const teamMembers = members.length
   const pendingTasks = leadProjects.reduce((sum, p) => sum + p.tasks, 0)
 
   return (
     <div className="p-8">
-    
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -90,7 +104,7 @@ export default function LeadDashboard({
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
-              <p className="text-3xl font-bold text-foreground">{teamMembers}</p>
+              <p className="text-3xl font-bold text-foreground">{memberCount}</p>
               <Users className="w-8 h-8 text-accent opacity-60" />
             </div>
           </CardContent>
@@ -193,10 +207,9 @@ export default function LeadDashboard({
             </CardContent>
           </Card>
 
-        
+
         </div>
       </div>
     </div>
   )
 }
-

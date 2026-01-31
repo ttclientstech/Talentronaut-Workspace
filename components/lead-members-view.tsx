@@ -4,7 +4,6 @@ import { useState, useEffect } from "react"
 import { Users, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 
 interface LeadMembersViewProps {
@@ -21,7 +20,6 @@ interface TeamMember {
 }
 
 export default function LeadMembersView({ onViewChange }: LeadMembersViewProps) {
-  const { currentOrganization, isLoading: orgLoading } = useOrganization()
   const { user } = useAuth()
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -29,7 +27,7 @@ export default function LeadMembersView({ onViewChange }: LeadMembersViewProps) 
 
   // Fetch team members from lead's projects
   const fetchTeamMembers = async () => {
-    if (!user || !currentOrganization) return
+    if (!user) return
 
     try {
       setIsLoading(true)
@@ -59,10 +57,10 @@ export default function LeadMembersView({ onViewChange }: LeadMembersViewProps) 
 
   useEffect(() => {
     fetchTeamMembers()
-  }, [user, currentOrganization])
+  }, [user])
 
   // Show loading state
-  if (isLoading || orgLoading) {
+  if (isLoading) {
     return (
       <div className="p-8 flex items-center justify-center h-full">
         <p className="text-muted-foreground">Loading team members...</p>
@@ -85,9 +83,6 @@ export default function LeadMembersView({ onViewChange }: LeadMembersViewProps) 
     )
   }
 
-  // Don't render if organization data is not loaded yet
-  if (!currentOrganization) return null
-
   // Helper function to get initials for avatar
   const getInitials = (name: string) => {
     return name
@@ -108,8 +103,7 @@ export default function LeadMembersView({ onViewChange }: LeadMembersViewProps) 
             My Team Members
           </h2>
           <p className="text-muted-foreground">
-            Team members on your projects in{" "}
-            <span className="font-semibold text-foreground">{currentOrganization.name}</span> ({teamMembers.length}{" "}
+            Team members on your projects ({teamMembers.length}{" "}
             {teamMembers.length === 1 ? "member" : "members"})
           </p>
         </div>
@@ -223,4 +217,3 @@ export default function LeadMembersView({ onViewChange }: LeadMembersViewProps) 
     </div>
   )
 }
-

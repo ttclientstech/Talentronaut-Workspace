@@ -5,7 +5,6 @@ import { Users, Plus, X, Loader2, Crown, Shield, Search, Trash2 } from "lucide-r
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 
 interface ManageProjectTeamModalProps {
@@ -36,15 +35,45 @@ export default function ManageProjectTeamModal({
   projectId,
   onTeamUpdate,
 }: ManageProjectTeamModalProps) {
-  const { members: orgMembers } = useOrganization()
   const { user } = useAuth()
   const [teamMembers, setTeamMembers] = useState<Member[]>([])
+  const [orgMembers, setOrgMembers] = useState<Member[]>([])
   const [projectLead, setProjectLead] = useState<Member | null>(null)
   const [projectCreator, setProjectCreator] = useState<ProjectCreator | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isProcessing, setIsProcessing] = useState(false)
   const [showAddMembers, setShowAddMembers] = useState(false)
+
+  // Fetch all organization members to populate the add list
+  const fetchOrgMembers = async () => {
+    try {
+      const token = localStorage.getItem("token")
+      const response = await fetch("/api/members", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.members) {
+        // Map API response to Member interface (simplify role)
+        const mappedMembers = data.members.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          email: m.email,
+          role: m.role,
+          skills: m.skills || []
+        }))
+        setOrgMembers(mappedMembers)
+      }
+    } catch (error) {
+      console.error("Error fetching org members:", error)
+    }
+  }
+
 
   // Fetch project team members
   const fetchProjectTeam = async () => {
@@ -92,6 +121,7 @@ export default function ManageProjectTeamModal({
   useEffect(() => {
     if (isOpen && projectId) {
       fetchProjectTeam()
+      fetchOrgMembers()
       setShowAddMembers(false)
       setSearchQuery("")
     }
@@ -251,7 +281,7 @@ export default function ManageProjectTeamModal({
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium truncate">{projectCreator.name}</p>
-                        <Crown className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" />
+                        <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       </div>
                       <p className="text-xs text-muted-foreground truncate">{projectCreator.email}</p>
                     </div>
@@ -398,7 +428,7 @@ export default function ManageProjectTeamModal({
                             <p className="text-sm font-medium truncate">{member.name}</p>
                             <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                           </div>
-                          <Plus className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <Plus className="w-4 h-4 text-muted-foreground shrink-0" />
                         </button>
                       ))
                     ) : (

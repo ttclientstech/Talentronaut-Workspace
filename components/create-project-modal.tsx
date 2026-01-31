@@ -1,13 +1,11 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Plus, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 
 interface CreateProjectModalProps {
@@ -15,9 +13,14 @@ interface CreateProjectModalProps {
   onClose: () => void
 }
 
+interface Member {
+  id: string
+  name: string
+  role: string
+}
+
 export default function CreateProjectModal({ isOpen, onClose }: CreateProjectModalProps) {
-  const { currentOrganization, members, isLoading } = useOrganization()
-  const { refreshUser } = useAuth()
+  const { refreshUser, user } = useAuth()
 
   const [formData, setFormData] = useState({
     projectName: "",
@@ -26,8 +29,44 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
     priority: "Medium",
   })
 
+  const [members, setMembers] = useState<Member[]>([])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isLoadingMembers, setIsLoadingMembers] = useState(false)
+
+  // Fetch members to populate the lead dropdown
+  const fetchMembers = async () => {
+    try {
+      setIsLoadingMembers(true)
+      const token = localStorage.getItem("token")
+      const response = await fetch("/api/members", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.members) {
+        setMembers(data.members.map((m: any) => ({
+          id: m.id,
+          name: m.name,
+          role: m.role
+        })))
+      }
+    } catch (error) {
+      console.error("Error fetching members:", error)
+    } finally {
+      setIsLoadingMembers(false)
+    }
+  }
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchMembers()
+    }
+  }, [isOpen])
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -116,9 +155,6 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
 
   if (!isOpen) return null
 
-  // Don't render modal content if organization data is not loaded yet
-  if (isLoading || !currentOrganization) return null
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <Card className="w-full max-w-md border-border shadow-lg">
@@ -126,7 +162,7 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-2xl">Create New Project</CardTitle>
-              <CardDescription className="mt-1">Add a new project to {currentOrganization.name}</CardDescription>
+              <CardDescription className="mt-1">Add a new project to your team</CardDescription>
             </div>
             <button
               onClick={onClose}
@@ -169,9 +205,8 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 value={formData.description}
                 onChange={handleInputChange}
                 rows={3}
-                className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none ${
-                  errors.description ? "border-destructive" : ""
-                }`}
+                className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all resize-none ${errors.description ? "border-destructive" : ""
+                  }`}
                 aria-invalid={!!errors.description}
               />
               {errors.description && <p className="text-xs text-destructive mt-1">{errors.description}</p>}
@@ -187,12 +222,12 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                 name="lead"
                 value={formData.lead}
                 onChange={handleInputChange}
-                className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${
-                  errors.lead ? "border-destructive" : ""
-                }`}
+                className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${errors.lead ? "border-destructive" : ""
+                  }`}
                 aria-invalid={!!errors.lead}
+                disabled={isLoadingMembers}
               >
-                <option value="">Select a project lead</option>
+                <option value="">{isLoadingMembers ? "Loading members..." : "Select a project lead"}</option>
                 {members.map((member) => (
                   <option key={member.id} value={member.id}>
                     {member.name} ({member.role})
@@ -225,11 +260,10 @@ export default function CreateProjectModal({ isOpen, onClose }: CreateProjectMod
                         priority,
                       }))
                     }
-                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all border ${
-                      formData.priority === priority
+                    className={`flex-1 px-3 py-2 rounded-md text-sm font-medium transition-all border ${formData.priority === priority
                         ? "bg-primary text-primary-foreground border-primary"
                         : "bg-input border-border text-foreground hover:border-primary/50"
-                    }`}
+                      }`}
                   >
                     {priority}
                   </button>

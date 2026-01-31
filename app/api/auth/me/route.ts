@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     await connectDB()
 
     // Get user from database
-    const user = await User.findById(auth.user.userId).populate("organizationId", "name handle")
+    const user = await User.findById(auth.user.userId)
 
     if (!user) {
       return NextResponse.json(
@@ -36,7 +36,6 @@ export async function GET(request: NextRequest) {
           email: user.email,
           profilePicture: user.profilePicture,
           role: user.role,
-          organizationId: user.organizationId,
           skills: user.skills,
           createdAt: user.createdAt,
         },

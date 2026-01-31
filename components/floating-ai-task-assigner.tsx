@@ -5,16 +5,14 @@ import { Zap } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import AdminAITaskAssignerSleek from "@/components/admin-ai-task-assigner-sleek"
 import LeadAITaskAssigner from "@/components/lead-ai-task-assigner"
-import { useOrganization } from "@/lib/organization-context"
 import { useAuth } from "@/lib/auth-context"
 
 export default function FloatingAITaskAssigner() {
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const { currentOrganization, isLoading } = useOrganization()
   const { user } = useAuth()
 
-  // Don't render if organization data is not loaded yet
-  if (isLoading || !currentOrganization || !user) return null
+  // Don't render if user data is not loaded yet
+  if (!user) return null
 
   // Get current user role from auth context
   const currentUserRole = user.role

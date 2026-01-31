@@ -4,7 +4,7 @@ export interface IProject extends Document {
   _id: mongoose.Types.ObjectId
   name: string
   description?: string
-  organizationId: mongoose.Types.ObjectId
+  // organizationId removed
   createdById: mongoose.Types.ObjectId
   leadId: mongoose.Types.ObjectId
   memberIds: mongoose.Types.ObjectId[]
@@ -33,11 +33,7 @@ const ProjectSchema = new Schema<IProject>(
       trim: true,
       maxlength: [500, "Description cannot exceed 500 characters"],
     },
-    organizationId: {
-      type: Schema.Types.ObjectId,
-      ref: "Organization",
-      required: [true, "Organization is required"],
-    },
+    // organizationId removed
     createdById: {
       type: Schema.Types.ObjectId,
       ref: "User",
@@ -92,7 +88,7 @@ const ProjectSchema = new Schema<IProject>(
 )
 
 // Indexes for faster queries
-ProjectSchema.index({ organizationId: 1 })
+// ProjectSchema.index({ organizationId: 1 })
 ProjectSchema.index({ createdById: 1 })
 ProjectSchema.index({ leadId: 1 })
 ProjectSchema.index({ status: 1 })
