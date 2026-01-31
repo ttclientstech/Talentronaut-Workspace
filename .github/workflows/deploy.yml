@@ -84,6 +84,16 @@ jobs:
 
             echo "🚀 Starting deployment..."
 
+            # Create deployment directory if it doesn't exist
+            if [ ! -d "${{ env.DEPLOY_PATH }}" ]; then
+              echo "📂 Directory not found. Creating ${{ env.DEPLOY_PATH }}..."
+              sudo mkdir -p "${{ env.DEPLOY_PATH }}"
+              sudo chown -R $USER:$USER "${{ env.DEPLOY_PATH }}"
+
+              echo "📥 Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git "${{ env.DEPLOY_PATH }}"
+            fi
+
             # Navigate to deployment directory
             cd ${{ env.DEPLOY_PATH }}
 
