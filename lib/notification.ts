@@ -8,10 +8,11 @@ const sesClient = new SESClient({
     },
 })
 
-export async function sendEmail(to: string, subject: string, message: string) {
+export async function sendEmail(to: string, subject: string, message: string, html?: string) {
     if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
         console.warn("AWS Credentials not found. Mocking email send.")
         console.log(`[MOCK EMAIL] To: ${to}, Subject: ${subject}, Message: ${message}`)
+        if (html) console.log(`[MOCK EMAIL HTML] Length: ${html.length}`)
         return Promise.resolve(true)
     }
 
@@ -28,6 +29,11 @@ export async function sendEmail(to: string, subject: string, message: string) {
                 Text: {
                     Data: message,
                 },
+                ...(html && {
+                    Html: {
+                        Data: html,
+                    },
+                }),
             },
         },
     }
