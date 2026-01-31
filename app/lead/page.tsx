@@ -15,6 +15,7 @@ import ProtectedRoute from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
+import PasswordsView from "@/components/passwords-view"
 
 export default function LeadPage() {
   return (
@@ -27,7 +28,7 @@ export default function LeadPage() {
 function LeadPageContent() {
   const { user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "my-schedule" | "my-skills"
+    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "my-schedule" | "my-skills" | "passwords"
   >("dashboard")
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [isAITaskAssignerOpen, setIsAITaskAssignerOpen] = useState(false)
@@ -39,7 +40,7 @@ function LeadPageContent() {
   }
 
   const handleViewChange = (
-    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "my-schedule" | "my-skills",
+    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "my-schedule" | "my-skills" | "passwords",
   ) => {
     setCurrentView(view)
   }
@@ -98,6 +99,15 @@ function LeadPageContent() {
               }`}
           >
             Members
+          </button>
+          <button
+            onClick={() => handleViewChange("passwords")}
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "passwords"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
+              }`}
+          >
+            Passwords
           </button>
 
           <div className="mt-6 mb-2 px-4 py-2">
@@ -162,6 +172,7 @@ function LeadPageContent() {
         {currentView === "members" && <LeadMembersView onViewChange={handleViewChange} />}
         {currentView === "my-schedule" && <MyScheduleView />}
         {currentView === "my-skills" && <SkillsView />}
+        {currentView === "passwords" && <PasswordsView />}
       </main>
 
       {/* AI Task Assigner Modal */}

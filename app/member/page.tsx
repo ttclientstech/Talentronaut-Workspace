@@ -9,6 +9,7 @@ import ProtectedRoute from "@/components/protected-route"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
+import PasswordsView from "@/components/passwords-view"
 
 export default function MemberPage() {
   return (
@@ -20,9 +21,9 @@ export default function MemberPage() {
 
 function MemberPageContent() {
   const { user, logout } = useAuth()
-  const [currentView, setCurrentView] = useState<"my-tasks" | "projects" | "my-schedule" | "my-skills">("my-tasks")
+  const [currentView, setCurrentView] = useState<"my-tasks" | "projects" | "my-schedule" | "my-skills" | "passwords">("my-tasks")
 
-  const handleViewChange = (view: "my-tasks" | "projects" | "my-schedule" | "my-skills") => {
+  const handleViewChange = (view: "my-tasks" | "projects" | "my-schedule" | "my-skills" | "passwords") => {
     setCurrentView(view)
   }
 
@@ -58,6 +59,15 @@ function MemberPageContent() {
               }`}
           >
             Projects
+          </button>
+          <button
+            onClick={() => handleViewChange("passwords")}
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "passwords"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
+              }`}
+          >
+            Passwords
           </button>
 
           <div className="mt-6 mb-2 px-4 py-2">
@@ -111,6 +121,7 @@ function MemberPageContent() {
         {currentView === "projects" && <MemberProjectsView />}
         {currentView === "my-schedule" && <MyScheduleView />}
         {currentView === "my-skills" && <SkillsView />}
+        {currentView === "passwords" && <PasswordsView />}
       </main>
     </div>
   )

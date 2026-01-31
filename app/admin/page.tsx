@@ -19,6 +19,7 @@ import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import AdminUsersView from "@/components/admin-users-view"
+import PasswordsView from "@/components/passwords-view"
 
 export default function AdminPage() {
   return (
@@ -31,7 +32,7 @@ export default function AdminPage() {
 function AdminPageContent() {
   const { user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users"
+    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords"
   >("dashboard")
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
@@ -45,7 +46,7 @@ function AdminPageContent() {
   }
 
   const handleViewChange = (
-    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users",
+    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords",
   ) => {
     setCurrentView(view)
   }
@@ -73,6 +74,15 @@ function AdminPageContent() {
               }`}
           >
             Dashboard
+          </button>
+          <button
+            onClick={() => handleViewChange("passwords")}
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group relative overflow-hidden ${currentView === "passwords"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
+              }`}
+          >
+            Passwords
           </button>
 
           <div className="mt-6 mb-2 px-4 py-2">
@@ -179,6 +189,7 @@ function AdminPageContent() {
           <AdminTasksView projectId={selectedProject} onOpenManageTeam={() => setIsManageTeamOpen(true)} />
         )}
         {currentView === "members" && <MembersView onViewChange={handleViewChange} />}
+        {currentView === "passwords" && <PasswordsView />}
       </main>
 
       {/* Modals */}

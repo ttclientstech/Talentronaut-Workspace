@@ -130,7 +130,7 @@ export default function LoginPage() {
                   type="text"
                   placeholder="Enter Code"
                   value={accessCode}
-                  onChange={(e) => setAccessCode(e.target.value)}
+                  onChange={(e) => setAccessCode(e.target.value.toUpperCase())}
                   onFocus={() => setActiveInput(true)}
                   onBlur={() => setActiveInput(false)}
                   required
