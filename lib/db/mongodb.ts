@@ -2,7 +2,8 @@ import mongoose from "mongoose"
 import { validateEnvironmentVariables } from "@/lib/utils/validate-env"
 
 // Validate environment variables on first import
-validateEnvironmentVariables()
+// Validate environment variables on first import
+// validateEnvironmentVariables() - Moved to connectDB to safe crash handling
 
 const MONGODB_URI = process.env.MONGODB_URI!
 
@@ -34,6 +35,11 @@ async function connectDB(): Promise<typeof mongoose> {
   if (cached.conn) {
     return cached.conn
   }
+
+  // Validate environment variables before connecting
+  // This is done here rather than at top-level to ensure
+  // API routes don't crash with 500 HTML pages during module load
+  validateEnvironmentVariables()
 
   if (!cached.promise) {
     const opts = {
