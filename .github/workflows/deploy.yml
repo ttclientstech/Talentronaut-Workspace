@@ -87,16 +87,37 @@ jobs:
           script: |
             set -e
 
-            echo "🔍 DIAGNOSTIC: Checking Network..."
-            echo "1. Checking internet connectivity (Ping 8.8.8.8)..."
-            ping -c 3 8.8.8.8 || echo "❌ Ping failed"
+            echo "🔍 DIAGNOSTIC: Advanced Network Check..."
             
-            echo "2. Checking DNS/HTTP (IPv4 only)..."
-            curl -4 -I --connect-timeout 10 https://google.com || echo "❌ IPv4 HTTP failed"
+            echo "1. Checking Instance Metadata (Identity)..."
+            TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" --silent --fail || echo ""`
+            if [ -n "$TOKEN" ]; then
+                INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
+                MAC=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/mac)
+                echo "   Instance ID: $INSTANCE_ID"
+                echo "   MAC Address: $MAC"
+                echo "   Security Groups (via Metadata):"
+                curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/security-groups
+            else
+                 echo "   metadata service not reachable (IMDSv2)"
+            fi
+            echo ""
 
-            echo "3. Checking Firewall Status..."
-            sudo ufw status || echo "ufw not installed"
-            sudo iptables -L OUTPUT -n --line-numbers || echo "iptables check failed"
+            echo "2. Connectivity Tests..."
+            echo "   Ping 8.8.8.8:"
+            ping -c 3 8.8.8.8 || echo "   ❌ Ping failed"
+            
+            echo "   HTTP (80) Google:"
+            curl -I --connect-timeout 5 http://google.com || echo "   ❌ HTTP:80 failed"
+
+            echo "   HTTPS (443) Cloudflare (1.1.1.1):"
+            curl -I --connect-timeout 5 https://1.1.1.1 || echo "   ❌ HTTPS:IP 1.1.1.1 failed"
+
+            echo "3. MTU Check (Packaging 1472 bytes)..."
+            ping -M do -s 1472 -c 2 8.8.8.8 || echo "   ❌ MTU 1500 check failed (Fragmentation required)"
+
+            echo "4. Routing Table..."
+            ip route show
 
             echo "🚀 Starting deployment..."
 
