@@ -87,38 +87,96 @@ jobs:
           script: |
             set -e
 
-            echo "🔍 DIAGNOSTIC: Python TCP & Firewall Dump..."
-            
-            echo "1. VPC & Identity Check..."
-            TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" --silent --fail || echo ""`
-            if [ -n "$TOKEN" ]; then
-                MAC=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/mac)
-                VPC_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-id)
-                echo "   VPC ID: $VPC_ID"
-            fi
-
-            echo "2. Python TCP Connect (Port 443)..."
-            # Attempt to connect to google.com:443 using Python (no install needed)
-            python3 -c "import socket; 
-            try: 
-              socket.create_connection(('google.com', 443), timeout=5); print('   ✅ Python TCP Connect Success')
-            except Exception as e: 
-              print(f'   ❌ Python TCP Connect Failed: {e}')"
-
-            echo "3. Kernel & Conntrack Check..."
-            dmesg | grep -i "conntrack" | tail -n 5 || echo "   No conntrack errors found"
-            
-            echo "4. Full Firewall Dump..."
-            # Check if Docker or something else added hidden rules
-            sudo iptables-save | grep -v "KUBE" | head -n 20
-            echo "...(truncated)"
-
-            echo "🚀 Starting deployment..."
+            echo "� Starting deployment..."
 
             # --- Provisioning Section ---
-            # ... (omitted for brevity, assume unchanged) ...
+            # Install Node.js if not present
+            if ! command -v node &> /dev/null; then
+                echo "📦 Node.js not found. Installing..."
+                curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+                sudo apt-get install -y nodejs
+            fi
 
-            # Check for directory... (omitted)
+            # Install pnpm if not present
+            if ! command -v pnpm &> /dev/null; then
+                echo "📦 pnpm not found. Installing..."
+                sudo npm install -g pnpm
+            fi
+
+            # Install PM2 if not present
+            if ! command -v pm2 &> /dev/null; then
+                echo "📦 PM2 not found. Installing..."
+                sudo npm install -g pm2
+            fi
+
+            # --- Nginx Configuration ---
+            # Install Nginx if not present
+            if ! command -v nginx &> /dev/null; then
+                echo "📦 Nginx not found. Installing..."
+                sudo apt-get update
+                sudo apt-get install -y nginx
+            fi
+
+            # Configure Nginx Proxy
+            echo "🔧 Configuring Nginx..."
+            cat << 'NGINX_CONF' | sudo tee /etc/nginx/sites-available/default > /dev/null
+            # Catch-all block to drop requests to IP or unmatched domains
+            server {
+                listen 80 default_server;
+                server_name _;
+                return 444; # Connection closed without response
+            }
+
+            # Main site block
+            server {
+                listen 80;
+                server_name ${{ secrets.DOMAIN_NAME }};
+
+                location / {
+                    proxy_pass http://localhost:3000;
+                    proxy_http_version 1.1;
+                    proxy_set_header Upgrade $http_upgrade;
+                    proxy_set_header Connection 'upgrade';
+                    proxy_set_header Host $host;
+                    proxy_cache_bypass $http_upgrade;
+                }
+            }
+            NGINX_CONF
+
+            # Test and Reload Nginx
+            sudo nginx -t && sudo systemctl reload nginx
+
+            # --- SSL Configuration (Certbot) ---
+            # Install Certbot if not present
+            if ! command -v certbot &> /dev/null; then
+                echo "📦 Certbot not found. Installing..."
+                sudo apt-get install -y certbot python3-certbot-nginx
+            fi
+
+            # Generate/Install SSL Certificate
+            echo "🔒 Configuring SSL for ${{ env.DOMAIN_NAME }}..."
+            # Only run if domain is set
+            if [ -n "${{ env.DOMAIN_NAME }}" ]; then
+                 sudo certbot --nginx -d "${{ env.DOMAIN_NAME }}" --non-interactive --agree-tos -m "${{ env.SSL_EMAIL }}" --redirect --keep-until-expiring || echo "⚠️ SSL Certbot failed, but continuing..."
+            fi
+            # ---------------------------
+
+            # Create log directory for PM2
+            echo "📝 Configuring log directory..."
+            if [ ! -d "/var/log/work-manager" ]; then
+                sudo mkdir -p "/var/log/work-manager"
+            fi
+            sudo chown -R $USER:$USER "/var/log/work-manager"
+
+            # Create deployment directory if it doesn't exist
+            if [ ! -d "${{ env.DEPLOY_PATH }}" ]; then
+              echo "📂 Directory not found. Creating ${{ env.DEPLOY_PATH }}..."
+              sudo mkdir -p "${{ env.DEPLOY_PATH }}"
+              sudo chown -R $USER:$USER "${{ env.DEPLOY_PATH }}"
+
+              echo "📥 Cloning repository..."
+              git clone https://github.com/${{ github.repository }}.git "${{ env.DEPLOY_PATH }}"
+            fi
 
             # Navigate to deployment directory
             cd ${{ env.DEPLOY_PATH }}
