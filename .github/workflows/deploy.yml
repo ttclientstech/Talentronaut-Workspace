@@ -143,12 +143,14 @@ jobs:
 
             # Health check
             echo "🏥 Running health check..."
-            sleep 5
+            sleep 15
 
             if curl -f http://localhost:3000/api/health > /dev/null 2>&1; then
               echo "✅ Deployment successful!"
             else
               echo "❌ Health check failed!"
+              echo "📋 PM2 Logs:"
+              pm2 logs work-manager --lines 50 --nostream
               exit 1
             fi
 
