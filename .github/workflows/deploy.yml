@@ -87,6 +87,13 @@ jobs:
           script: |
             set -e
 
+            echo "🔍 DIAGNOSTIC: Checking Network..."
+            echo "1. Checking internet connectivity (Ping 8.8.8.8)..."
+            ping -c 3 8.8.8.8 || echo "❌ Ping failed"
+            
+            echo "2. Checking DNS resolution (google.com)..."
+            curl -I https://google.com || echo "❌ DNS/HTTP Request failed"
+
             echo "🚀 Starting deployment..."
 
             # --- Provisioning Section ---
