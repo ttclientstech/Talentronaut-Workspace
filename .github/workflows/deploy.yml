@@ -132,6 +132,7 @@ jobs:
 
             # Build application
             echo "🏗️  Building application..."
+            rm -rf .next
             pnpm build
 
             # Restart PM2 process
