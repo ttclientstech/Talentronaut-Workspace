@@ -91,8 +91,12 @@ jobs:
             echo "1. Checking internet connectivity (Ping 8.8.8.8)..."
             ping -c 3 8.8.8.8 || echo "❌ Ping failed"
             
-            echo "2. Checking DNS resolution (google.com)..."
-            curl -I https://google.com || echo "❌ DNS/HTTP Request failed"
+            echo "2. Checking DNS/HTTP (IPv4 only)..."
+            curl -4 -I --connect-timeout 10 https://google.com || echo "❌ IPv4 HTTP failed"
+
+            echo "3. Checking Firewall Status..."
+            sudo ufw status || echo "ufw not installed"
+            sudo iptables -L OUTPUT -n --line-numbers || echo "iptables check failed"
 
             echo "🚀 Starting deployment..."
 
