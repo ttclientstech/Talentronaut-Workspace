@@ -87,37 +87,32 @@ jobs:
           script: |
             set -e
 
-            echo "🔍 DIAGNOSTIC: Advanced Network Check..."
+            echo "🔍 DIAGNOSTIC: Deep Trace & Kernel Check..."
             
-            echo "1. Checking Instance Metadata (Identity)..."
+            # Install Traceroute
+            if ! command -v traceroute &> /dev/null; then
+                echo "📦 Installing traceroute..."
+                sudo apt-get update && sudo apt-get install -y traceroute
+            fi
+
+            echo "1. VPC & Identity Check..."
             TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" --silent --fail || echo ""`
             if [ -n "$TOKEN" ]; then
-                INSTANCE_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/instance-id)
                 MAC=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/mac)
-                echo "   Instance ID: $INSTANCE_ID"
-                echo "   MAC Address: $MAC"
-                echo "   Security Groups (via Metadata):"
-                curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/security-groups
-            else
-                 echo "   metadata service not reachable (IMDSv2)"
+                VPC_ID=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" -s http://169.254.169.254/latest/meta-data/network/interfaces/macs/$MAC/vpc-id)
+                echo "   VPC ID: $VPC_ID"
             fi
-            echo ""
 
-            echo "2. Connectivity Tests..."
-            echo "   Ping 8.8.8.8:"
-            ping -c 3 8.8.8.8 || echo "   ❌ Ping failed"
+            echo "2. TCP Traceroute (Port 443)..."
+            # -n: No DNS, -T: TCP, -p 443: Port 443
+            sudo traceroute -n -T -p 443 google.com || echo "   ❌ Traceroute failed"
+
+            echo "3. Kernel & Conntrack Check..."
+            # Check for "table full" errors
+            dmesg | grep -i "conntrack" | tail -n 5 || echo "   No conntrack errors found"
             
-            echo "   HTTP (80) Google:"
-            curl -I --connect-timeout 5 http://google.com || echo "   ❌ HTTP:80 failed"
-
-            echo "   HTTPS (443) Cloudflare (1.1.1.1):"
-            curl -I --connect-timeout 5 https://1.1.1.1 || echo "   ❌ HTTPS:IP 1.1.1.1 failed"
-
-            echo "3. MTU Check (Packaging 1472 bytes)..."
-            ping -M do -s 1472 -c 2 8.8.8.8 || echo "   ❌ MTU 1500 check failed (Fragmentation required)"
-
-            echo "4. Routing Table..."
-            ip route show
+            echo "4. Connectivity Test (curl)..."
+            curl -I --connect-timeout 5 https://google.com || echo "   ❌ Curl failed"
 
             echo "🚀 Starting deployment..."
 
