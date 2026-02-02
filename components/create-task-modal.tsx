@@ -11,6 +11,7 @@ import { useAuth } from "@/lib/auth-context"
 interface CreateTaskModalProps {
   isOpen: boolean
   onClose: () => void
+  defaultProjectId?: string
 }
 
 interface Project {
@@ -24,7 +25,7 @@ interface Member {
   role: string
 }
 
-export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProps) {
+export default function CreateTaskModal({ isOpen, onClose, defaultProjectId }: CreateTaskModalProps) {
   const { user } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [members, setMembers] = useState<Member[]>([])
@@ -34,7 +35,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    projectId: "",
+    projectId: defaultProjectId || "",
     assignedToId: "",
     priority: "Medium",
     dueDate: "",
@@ -74,10 +75,22 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
   // Fetch projects when modal opens
   useEffect(() => {
     if (isOpen && user) {
+      if (!defaultProjectId) {
+        fetchProjects()
+      }
+      // If defaultProjectId is provided, we don't necessarily need to fetch all projects if we just want to show the current one
+      // But fetching them ensures we have the name if needed.
+      // For simplicity, let's fetch them so everything works generally, or we could fetch specific project name.
       fetchProjects()
+
+      setFormData(prev => ({
+        ...prev,
+        projectId: defaultProjectId || prev.projectId
+      }))
+
       fetchMembers()
     }
-  }, [isOpen, user])
+  }, [isOpen, user, defaultProjectId])
 
   const fetchProjects = async () => {
     try {
@@ -274,7 +287,7 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                 className={`w-full px-3 py-2 text-sm bg-input border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-ring transition-all appearance-none cursor-pointer ${errors.projectId ? "border-destructive" : ""
                   }`}
                 aria-invalid={!!errors.projectId}
-                disabled={isLoadingProjects}
+                disabled={isLoadingProjects || !!defaultProjectId}
               >
                 <option value="">Select a project</option>
                 <option value="myself">Myself (Personal Task)</option>
@@ -331,8 +344,8 @@ export default function CreateTaskModal({ isOpen, onClose }: CreateTaskModalProp
                       }))
                     }
                     className={`px-3 py-2 rounded-md text-xs font-medium transition-all border ${formData.priority === priority
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-input border-border text-foreground hover:border-primary/50"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-input border-border text-foreground hover:border-primary/50"
                       }`}
                   >
                     {priority}

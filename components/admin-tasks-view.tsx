@@ -8,6 +8,8 @@ import { useState, useEffect } from "react"
 import { useAuth } from "@/lib/auth-context"
 
 import { useRouter } from "next/navigation"
+import CreateTaskModal from "@/components/create-task-modal"
+import { Plus } from "lucide-react"
 
 interface AdminTasksViewProps {
   projectId: string
@@ -61,6 +63,7 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
   const [isReassigning, setIsReassigning] = useState(false)
   const [isClosingProject, setIsClosingProject] = useState(false)
   const [isDeletingProject, setIsDeletingProject] = useState(false)
+  const [isCreateTaskModalOpen, setIsCreateTaskModalOpen] = useState(false)
 
   // Fetch project details and tasks
   const fetchProjectDetails = async () => {
@@ -440,6 +443,13 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
               <Button onClick={onOpenManageTeam} variant="outline" size="sm">
                 <Users className="w-4 h-4 mr-2" />
                 Manage Team
+              </Button>
+            )}
+            {/* New Task Button - Admin/Lead */}
+            {(user?.role === "Admin" || user?.role === "Lead") && (
+              <Button onClick={() => setIsCreateTaskModalOpen(true)} className="bg-primary hover:bg-primary/90 text-white" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                New Task
               </Button>
             )}
             {user?.role === "Admin" && (
@@ -885,6 +895,16 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
           </Card>
         </div>
       )}
+
+      {/* Create Task Modal */}
+      <CreateTaskModal
+        isOpen={isCreateTaskModalOpen}
+        onClose={() => {
+          setIsCreateTaskModalOpen(false)
+          fetchProjectDetails() // Refresh tasks after creation
+        }}
+        defaultProjectId={projectId}
+      />
     </div>
   )
 }
