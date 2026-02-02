@@ -87,14 +87,8 @@ jobs:
           script: |
             set -e
 
-            echo "🔍 DIAGNOSTIC: Deep Trace & Kernel Check..."
+            echo "🔍 DIAGNOSTIC: Python TCP & Firewall Dump..."
             
-            # Install Traceroute
-            if ! command -v traceroute &> /dev/null; then
-                echo "📦 Installing traceroute..."
-                sudo apt-get update && sudo apt-get install -y traceroute
-            fi
-
             echo "1. VPC & Identity Check..."
             TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600" --silent --fail || echo ""`
             if [ -n "$TOKEN" ]; then
@@ -103,16 +97,21 @@ jobs:
                 echo "   VPC ID: $VPC_ID"
             fi
 
-            echo "2. TCP Traceroute (Port 443)..."
-            # -n: No DNS, -T: TCP, -p 443: Port 443
-            sudo traceroute -n -T -p 443 google.com || echo "   ❌ Traceroute failed"
+            echo "2. Python TCP Connect (Port 443)..."
+            # Attempt to connect to google.com:443 using Python (no install needed)
+            python3 -c "import socket; 
+            try: 
+              socket.create_connection(('google.com', 443), timeout=5); print('   ✅ Python TCP Connect Success')
+            except Exception as e: 
+              print(f'   ❌ Python TCP Connect Failed: {e}')"
 
             echo "3. Kernel & Conntrack Check..."
-            # Check for "table full" errors
             dmesg | grep -i "conntrack" | tail -n 5 || echo "   No conntrack errors found"
             
-            echo "4. Connectivity Test (curl)..."
-            curl -I --connect-timeout 5 https://google.com || echo "   ❌ Curl failed"
+            echo "4. Full Firewall Dump..."
+            # Check if Docker or something else added hidden rules
+            sudo iptables-save | grep -v "KUBE" | head -n 20
+            echo "...(truncated)"
 
             echo "🚀 Starting deployment..."
 
