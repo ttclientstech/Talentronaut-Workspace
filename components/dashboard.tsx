@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 
 interface DashboardProps {
-  onViewChange: (view: "dashboard" | "projects" | "tasks") => void;
+  onViewChange: (view: "dashboard" | "projects" | "tasks" | "members") => void;
   onOpenCreateProject?: () => void;
   onOpenAITaskAssigner?: () => void;
   onOpenTeamSettings?: () => void;
@@ -91,7 +91,10 @@ export default function Dashboard({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <div
+            onClick={() => onViewChange("projects")}
+            className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+          >
             <div className="absolute top-6 right-6 p-2 bg-primary/10 rounded-2xl group-hover:bg-primary group-hover:text-white transition-colors duration-300">
               <Briefcase className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
             </div>
@@ -108,7 +111,10 @@ export default function Dashboard({
             <p className="text-xs text-muted-foreground mt-2 font-medium">Active & Ongoing</p>
           </div>
 
-          <div className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <div
+            onClick={() => onViewChange("members")}
+            className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+          >
             <div className="absolute top-6 right-6 p-2 bg-accent/10 rounded-2xl group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300">
               <Users className="w-5 h-5 text-accent-foreground/70 group-hover:text-accent-foreground transition-colors" />
             </div>
@@ -125,7 +131,10 @@ export default function Dashboard({
             <p className="text-xs text-muted-foreground mt-2 font-medium">Members Enrolled</p>
           </div>
 
-          <div className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
+          <div
+            onClick={() => onViewChange("tasks")} // or "my-tasks" depending on preference, likely general tasks for admin
+            className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
+          >
             <div className="absolute top-6 right-6 p-2 bg-secondary/30 rounded-2xl group-hover:bg-secondary group-hover:text-secondary-foreground transition-colors duration-300">
               <CheckSquare className="w-5 h-5 text-secondary-foreground/70 group-hover:text-secondary-foreground transition-colors" />
             </div>
@@ -142,7 +151,10 @@ export default function Dashboard({
             <p className="text-xs text-muted-foreground mt-2 font-medium">Tasks Needed</p>
           </div>
 
-          <div className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-white to-primary/5 dark:from-card dark:to-primary/10">
+          <div
+            onClick={onOpenAITaskAssigner}
+            className="group relative bg-white dark:bg-card p-6 rounded-3xl border border-border/50 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 bg-gradient-to-br from-white to-primary/5 dark:from-card dark:to-primary/10 cursor-pointer"
+          >
             <div className="absolute top-6 right-6 p-2 bg-primary/10 rounded-2xl group-hover:bg-primary group-hover:text-white transition-colors duration-300">
               <Zap className="w-5 h-5 text-primary group-hover:text-white transition-colors" />
             </div>
