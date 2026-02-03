@@ -1,10 +1,17 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Plus, Search, MoreVertical, RefreshCw } from "lucide-react"
+import { Plus, Search, MoreVertical, RefreshCw, Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import CreateProjectModal from "./create-project-modal"
 import { useAuth } from "@/lib/auth-context"
 
@@ -34,6 +41,7 @@ export default function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("All")
 
   // Fetch projects from API
   const fetchProjects = async () => {
@@ -69,13 +77,17 @@ export default function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
     fetchProjects()
   }, [user])
 
-  // Filter projects based on search query
-  const filteredProjects = projects.filter(
-    (project) =>
+  // Filter projects based on search query and status
+  const filteredProjects = projects.filter((project) => {
+    const matchesSearch =
       project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       project.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.lead.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
+      project.lead.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus = statusFilter === "All" || project.status === statusFilter
+
+    return matchesSearch && matchesStatus
+  })
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
@@ -140,7 +152,7 @@ export default function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
       </div>
 
       {/* Search and Filters */}
-      <div className="flex gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
           <Input
@@ -149,6 +161,27 @@ export default function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
+        </div>
+
+        {/* Status Filter */}
+        <div className="w-full sm:w-[200px]">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <SelectValue placeholder="Filter by Status" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="All">All Statuses</SelectItem>
+              <SelectItem value="Not Started">Not Started</SelectItem>
+              <SelectItem value="Planning">Planning</SelectItem>
+              <SelectItem value="In Progress">In Progress</SelectItem>
+              <SelectItem value="Completed">Completed</SelectItem>
+              <SelectItem value="On Hold">On Hold</SelectItem>
+              <SelectItem value="Closed">Closed</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

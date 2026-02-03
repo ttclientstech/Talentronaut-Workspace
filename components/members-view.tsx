@@ -6,14 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useAuth } from "@/lib/auth-context"
 
-interface PendingMember {
-  id: string
-  userId: string
-  name: string
-  email: string
-  profilePicture?: string
-  requestDate: string
-}
+
 
 interface Member {
   id: string
@@ -34,8 +27,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
   const [members, setMembers] = useState<Member[]>([])
   const [isLoadingMembers, setIsLoadingMembers] = useState(true)
   const [selectedRole, setSelectedRole] = useState<Record<string, boolean>>({})
-  const [pendingMembers, setPendingMembers] = useState<PendingMember[]>([])
-  const [isLoadingRequests, setIsLoadingRequests] = useState(false)
+
 
   // Fetch members with project details
   const fetchMembers = async () => {
@@ -64,100 +56,13 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
     }
   }
 
-  // Fetch pending member requests from API
-  const fetchPendingRequests = async () => {
-    try {
-      setIsLoadingRequests(true)
-      const token = localStorage.getItem("token")
-      const response = await fetch("/api/member-requests/pending", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-      })
 
-      const data = await response.json()
-
-      if (data.success && data.requests) {
-        const formattedRequests = data.requests.map((req: any) => ({
-          id: req.id,
-          userId: req.user.id,
-          name: req.user.name,
-          email: req.user.email,
-          profilePicture: req.user.profilePicture,
-          requestDate: req.requestedAt,
-        }))
-        setPendingMembers(formattedRequests)
-      }
-    } catch (error) {
-      console.error("Error fetching pending requests:", error)
-    } finally {
-      setIsLoadingRequests(false)
-    }
-  }
 
   useEffect(() => {
     fetchMembers()
-    fetchPendingRequests()
   }, [])
 
-  const handleApprove = async (pendingMember: PendingMember) => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`/api/member-requests/${pendingMember.id}/process`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ action: "approve" }),
-      })
 
-      const data = await response.json()
-
-      if (data.success) {
-        // Remove from pending list
-        setPendingMembers((prev) => prev.filter((p) => p.id !== pendingMember.id))
-        alert(`${pendingMember.name} has been approved and can now access the organization!`)
-        // Refresh members list
-        await fetchMembers()
-      } else {
-        alert(data.error || "Failed to approve request")
-      }
-    } catch (error) {
-      console.error("Error approving request:", error)
-      alert("Failed to approve request")
-    }
-  }
-
-  const handleReject = async (pendingMember: PendingMember) => {
-    try {
-      const token = localStorage.getItem("token")
-      const response = await fetch(`/api/member-requests/${pendingMember.id}/process`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        credentials: "include",
-        body: JSON.stringify({ action: "reject" }),
-      })
-
-      const data = await response.json()
-
-      if (data.success) {
-        // Remove from pending list
-        setPendingMembers((prev) => prev.filter((p) => p.id !== pendingMember.id))
-        alert(`${pendingMember.name}'s request has been rejected.`)
-      } else {
-        alert(data.error || "Failed to reject request")
-      }
-    } catch (error) {
-      console.error("Error rejecting request:", error)
-      alert("Failed to reject request")
-    }
-  }
 
   const handleRoleChange = async (memberId: string, newRole: "Admin" | "Lead" | "Member") => {
     try {
@@ -288,7 +193,6 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
         <Button
           onClick={() => {
             fetchMembers()
-            fetchPendingRequests()
           }}
           variant="outline"
           size="sm"
@@ -298,54 +202,7 @@ export default function MembersView({ onViewChange }: MembersViewProps) {
         </Button>
       </div>
 
-      {/* Pending Requests Section */}
-      {pendingMembers.length > 0 && (
-        <Card className="mb-8 border-yellow-200 dark:border-yellow-800 bg-yellow-50/50 dark:bg-yellow-900/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-800 dark:text-yellow-500">
-              <Clock className="w-5 h-5" />
-              Pending Requests ({pendingMembers.length})
-            </CardTitle>
-            <CardDescription>Review and approve new member requests</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {pendingMembers.map((pendingMember) => (
-                <div
-                  key={pendingMember.id}
-                  className="flex items-center justify-between p-4 bg-background rounded-lg border border-border"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                      {pendingMember.profilePicture || pendingMember.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{pendingMember.name}</p>
-                      <p className="text-sm text-muted-foreground">{pendingMember.email}</p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Requested: {new Date(pendingMember.requestDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => handleApprove(pendingMember)}
-                      className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Approve
-                    </Button>
-                    <Button onClick={() => handleReject(pendingMember)} variant="outline" className="text-red-600">
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Reject
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Members Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
