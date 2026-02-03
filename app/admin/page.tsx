@@ -15,6 +15,7 @@ import TeamSettingsModal from "@/components/team-settings-modal"
 import ManageProjectTeamModal from "@/components/manage-project-team-modal"
 import FloatingAITaskAssigner from "@/components/floating-ai-task-assigner"
 import ProtectedRoute from "@/components/protected-route"
+import ProjectTrackerView from "@/components/project-tracker-view"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
@@ -33,7 +34,7 @@ export default function AdminPage() {
 function AdminPageContent() {
   const { user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords"
+    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords" | "project-tracker"
   >("dashboard")
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
@@ -46,8 +47,13 @@ function AdminPageContent() {
     setCurrentView("tasks")
   }
 
+  const handleOpenProjectTracker = (projectId: string) => {
+    setSelectedProject(projectId)
+    setCurrentView("project-tracker")
+  }
+
   const handleViewChange = (
-    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords",
+    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords" | "project-tracker",
   ) => {
     setCurrentView(view)
   }
@@ -171,15 +177,31 @@ function AdminPageContent() {
             onOpenCreateProject={() => setIsCreateProjectOpen(true)}
             onOpenAITaskAssigner={() => setIsAITaskAssignerOpen(true)}
             onOpenTeamSettings={() => setIsTeamSettingsOpen(true)}
+            onNavigateToProject={handleProjectSelect}
           />
         )}
         {currentView === "users" && <AdminUsersView />}
         {currentView === "my-tasks" && <MyTasksView />}
         {currentView === "schedule" && <MyScheduleView />}
         {currentView === "skills" && <SkillsView />}
-        {currentView === "projects" && <ProjectsView onProjectSelect={handleProjectSelect} />}
+        {currentView === "projects" && (
+          <ProjectsView
+            onProjectSelect={handleProjectSelect}
+            onOpenProjectTracker={handleOpenProjectTracker}
+          />
+        )}
         {currentView === "tasks" && selectedProject && (
-          <AdminTasksView projectId={selectedProject} onOpenManageTeam={() => setIsManageTeamOpen(true)} />
+          <AdminTasksView
+            projectId={selectedProject}
+            onOpenManageTeam={() => setIsManageTeamOpen(true)}
+            onBack={() => setCurrentView("projects")}
+          />
+        )}
+        {currentView === "project-tracker" && selectedProject && (
+          <ProjectTrackerView
+            projectId={selectedProject}
+            onBack={() => setCurrentView("projects")}
+          />
         )}
         {currentView === "members" && <MembersView onViewChange={handleViewChange} />}
         {currentView === "passwords" && <PasswordsView />}

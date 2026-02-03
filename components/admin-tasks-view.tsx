@@ -14,6 +14,7 @@ import { Plus } from "lucide-react"
 interface AdminTasksViewProps {
   projectId: string
   onOpenManageTeam?: () => void
+  onBack: () => void
 }
 
 interface Task {
@@ -45,7 +46,7 @@ interface Project {
   startDate: string
 }
 
-export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTasksViewProps) {
+export default function AdminTasksView({ projectId, onOpenManageTeam, onBack }: AdminTasksViewProps) {
   const { user, refreshUser } = useAuth()
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
@@ -421,12 +422,13 @@ export default function AdminTasksView({ projectId, onOpenManageTeam }: AdminTas
     )
   }
 
+
   return (
     <div className="p-8">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-4">
-          <Button variant="ghost" size="sm" onClick={() => window.history.back()}>
+          <Button variant="ghost" size="sm" onClick={onBack}>
             <ArrowLeft className="w-4 h-4" />
           </Button>
           <div className="flex-1">

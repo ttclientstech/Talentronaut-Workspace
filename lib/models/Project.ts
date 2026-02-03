@@ -1,5 +1,14 @@
 import mongoose, { Document, Schema, Model } from "mongoose"
 
+export interface IProjectPhase {
+  _id: mongoose.Types.ObjectId
+  phase: string
+  date: string
+  description: string
+  platform: string
+  status: string
+}
+
 export interface IProject extends Document {
   _id: mongoose.Types.ObjectId
   name: string
@@ -8,6 +17,7 @@ export interface IProject extends Document {
   createdById: mongoose.Types.ObjectId
   leadId: mongoose.Types.ObjectId
   memberIds: mongoose.Types.ObjectId[]
+  phases: IProjectPhase[]
   status: "Not Started" | "Planning" | "In Progress" | "Completed" | "On Hold" | "Closed"
   priority: "Low" | "Medium" | "High" | "Critical"
   progress: number // 0-100
@@ -47,6 +57,13 @@ const ProjectSchema = new Schema<IProject>(
     memberIds: [{
       type: Schema.Types.ObjectId,
       ref: "User",
+    }],
+    phases: [{
+      phase: { type: String, default: "" },
+      date: { type: String, default: "" },
+      description: { type: String, default: "" },
+      platform: { type: String, default: "Backend" },
+      status: { type: String, default: "Pending" }
     }],
     status: {
       type: String,

@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
             Task.countDocuments({ isAIAssigned: true }),
             Project.find({})
                 .sort({ createdAt: -1 })
-                .limit(4)
+                .limit(3)
                 .populate("leadId", "name")
                 .populate("memberIds", "name")
                 .lean()
