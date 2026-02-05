@@ -14,7 +14,31 @@ export async function GET(request: NextRequest) {
 
     await connectDB()
 
-    // Get user from database
+    // Check if user is a guest (logged in with access code)
+    const isGuest = auth.user.userId.startsWith('guest_')
+
+    if (isGuest) {
+      // Return guest user data without querying database
+      return NextResponse.json(
+        {
+          success: true,
+          user: {
+            id: auth.user.userId,
+            name: auth.user.email.split('@')[0], // Use email prefix as name
+            email: auth.user.email,
+            profilePicture: null,
+            role: auth.user.role,
+            skills: [],
+            createdAt: new Date().toISOString(),
+            isGuest: true,
+            projectId: auth.user.projectId,
+          },
+        },
+        { status: 200 },
+      )
+    }
+
+    // Get user from database (for regular users)
     const user = await User.findById(auth.user.userId)
 
     if (!user) {

@@ -18,6 +18,7 @@ interface DashboardProps {
   onOpenCreateProject?: () => void;
   onOpenAITaskAssigner?: () => void;
   onOpenTeamSettings?: () => void;
+  onNavigateToProject?: (projectId: string) => void;
 }
 
 interface DashboardStats {
@@ -51,6 +52,7 @@ export default function Dashboard({
   onOpenCreateProject,
   onOpenAITaskAssigner,
   onOpenTeamSettings,
+  onNavigateToProject,
 }: DashboardProps) {
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -214,7 +216,13 @@ export default function Dashboard({
                         <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider block mb-1">Progress</span>
                         <span className="font-brand text-xl font-medium text-foreground">{project.progress}%</span>
                       </div>
-                      <div className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all shadow-sm">
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onNavigateToProject?.(project.id);
+                        }}
+                        className="w-10 h-10 rounded-full border border-border flex items-center justify-center text-muted-foreground group-hover:bg-primary group-hover:text-white group-hover:border-primary transition-all shadow-sm cursor-pointer"
+                      >
                         <ArrowUpRight className="w-5 h-5" />
                       </div>
                     </div>
@@ -279,22 +287,6 @@ export default function Dashboard({
                   <span className="font-bold text-sm text-foreground">Team</span>
                 </button>
               </div>
-
-              {stats?.organization && (
-                <div className="mt-4 p-6 rounded-2xl bg-black/5 dark:bg-white/5 border border-black/5 dark:border-white/5 space-y-3">
-                  <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-widest text-center mb-4">Workspace Info</h4>
-                  <div className="flex justify-between items-center text-sm py-2 border-b border-black/5 dark:border-white/5">
-                    <span className="text-muted-foreground">Code</span>
-                    <button className="font-mono font-bold bg-white dark:bg-black/20 px-2 py-1 rounded text-primary hover:text-primary/80 transition-colors" onClick={() => navigator.clipboard.writeText(stats.organization.inviteCode)}>
-                      {stats.organization.inviteCode}
-                    </button>
-                  </div>
-                  <div className="flex justify-between items-center text-sm pt-2">
-                    <span className="text-muted-foreground">Tasks</span>
-                    <span className="font-brand font-bold text-foreground">{stats.statistics.completedTasks} <span className="text-muted-foreground font-sans font-normal text-xs">/ {stats.statistics.taskCount}</span></span>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>

@@ -160,7 +160,11 @@ function LeadPageContent() {
         {currentView === "my-tasks" && <LeadMyTasksView />}
         {currentView === "projects" && <LeadProjectsView onProjectSelect={handleProjectSelect} />}
         {currentView === "tasks" && selectedProject && (
-          <AdminTasksView projectId={selectedProject} onOpenManageTeam={() => setIsManageTeamOpen(true)} />
+          <AdminTasksView
+            projectId={selectedProject}
+            onOpenManageTeam={() => setIsManageTeamOpen(true)}
+            onBack={() => setCurrentView("projects")}
+          />
         )}
         {currentView === "members" && <LeadMembersView onViewChange={handleViewChange} />}
         {currentView === "my-schedule" && <MyScheduleView />}

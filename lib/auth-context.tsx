@@ -9,6 +9,8 @@ interface User {
   email: string
   role: "Admin" | "Lead" | "Member"
   profilePicture?: string
+  projectId?: string
+  isGuest?: boolean
 }
 
 interface AuthContextType {
@@ -56,6 +58,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               email: data.user.email,
               role: data.user.role,
               profilePicture: data.user.profilePicture,
+              projectId: data.user.projectId,
+              isGuest: data.user.isGuest,
             }
             setUser(userData)
             localStorage.setItem("user", JSON.stringify(userData))
@@ -87,7 +91,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const loginWithAccessCode = async (accessCode: string) => {
     try {
-      const response = await fetch("/api/auth/login-with-code", {
+      // Try project access token first (for guest/invited users)
+      const projectTokenResponse = await fetch("/api/auth/login-with-project-token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -96,23 +101,59 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ accessCode }),
       })
 
-      const data = await response.json()
+      if (projectTokenResponse.ok) {
+        const data = await projectTokenResponse.json()
 
-      if (!response.ok) {
-        throw new Error(data.error || "Login failed")
+        if (data.success && data.user) {
+          const userData = {
+            id: data.user.id,
+            name: data.user.name,
+            email: data.user.email,
+            role: data.user.role,
+            profilePicture: data.user.profilePicture,
+            projectId: data.user.projectId,
+            isGuest: data.user.isGuest,
+          }
+          setUser(userData)
+          localStorage.setItem("user", JSON.stringify(userData))
+          localStorage.setItem("token", data.token)
+
+          // Redirect to specific project if provided
+          if (data.redirectTo) {
+            window.location.href = data.redirectTo
+          }
+          return
+        }
       }
 
-      if (data.success && data.user) {
-        const userData = {
-          id: data.user.id,
-          name: data.user.name,
-          email: data.user.email,
-          role: data.user.role,
-          profilePicture: data.user.profilePicture,
+      // If project token fails, try regular user access code
+      const userCodeResponse = await fetch("/api/auth/login-with-code", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ accessCode }),
+      })
+
+      const userDataResponse = await userCodeResponse.json()
+
+      if (!userCodeResponse.ok) {
+        throw new Error(userDataResponse.error || "Login failed")
+      }
+
+      if (userDataResponse.success && userDataResponse.user) {
+        const user = {
+          id: userDataResponse.user.id,
+          name: userDataResponse.user.name,
+          email: userDataResponse.user.email,
+          role: userDataResponse.user.role,
+          profilePicture: userDataResponse.user.profilePicture,
+          projectId: userDataResponse.user.projectId,
         }
-        setUser(userData)
-        localStorage.setItem("user", JSON.stringify(userData))
-        localStorage.setItem("token", data.token)
+        setUser(user)
+        localStorage.setItem("user", JSON.stringify(user))
+        localStorage.setItem("token", userDataResponse.token)
       }
     } catch (error) {
       console.error("Login with code error:", error)

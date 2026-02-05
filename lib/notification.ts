@@ -9,10 +9,22 @@ const sesClient = new SESClient({
 })
 
 export async function sendEmail(to: string, subject: string, message: string, html?: string) {
-    if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
-        console.warn("AWS Credentials not found. Mocking email send.")
-        console.log(`[MOCK EMAIL] To: ${to}, Subject: ${subject}, Message: ${message}`)
-        if (html) console.log(`[MOCK EMAIL HTML] Length: ${html.length}`)
+    // Check if we should skip actual email sending (for development/testing)
+    const skipEmailSending = process.env.SEND_ACTUAL_EMAILS !== 'true'
+
+    if (skipEmailSending || !process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+        console.log("\n" + "=".repeat(80))
+        console.log("📧 [EMAIL - " + (skipEmailSending ? "PREVIEW MODE" : "NO AWS CREDENTIALS") + "]")
+        console.log("=".repeat(80))
+        console.log(`To: ${to}`)
+        console.log(`Subject: ${subject}`)
+        console.log(`Message: ${message}`)
+        if (html) {
+            console.log(`HTML Length: ${html.length} characters`)
+            console.log(`Preview: ${html.substring(0, 200)}...`)
+        }
+        console.log("=".repeat(80) + "\n")
+        console.log("💡 TIP: Set SEND_ACTUAL_EMAILS=true in .env to send real emails via AWS SES\n")
         return Promise.resolve(true)
     }
 

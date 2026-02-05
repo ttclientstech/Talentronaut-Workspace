@@ -12,6 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import CreateProjectModal from "./create-project-modal"
 import { useAuth } from "@/lib/auth-context"
 
@@ -32,9 +38,10 @@ interface Project {
 
 interface ProjectsViewProps {
   onProjectSelect: (projectId: string) => void
+  onOpenProjectTracker: (projectId: string) => void
 }
 
-export default function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
+export default function ProjectsView({ onProjectSelect, onOpenProjectTracker }: ProjectsViewProps) {
   const { user } = useAuth()
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
   const [projects, setProjects] = useState<Project[]>([])
@@ -197,9 +204,28 @@ export default function ProjectsView({ onProjectSelect }: ProjectsViewProps) {
               <CardHeader className="pb-4">
                 <div className="flex items-start justify-between mb-2">
                   <CardTitle className="text-lg group-hover:text-primary transition-colors">{project.name}</CardTitle>
-                  <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onOpenProjectTracker(project.id)
+                        }}
+                      >
+                        Project Tracker
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
                 <CardDescription>{project.description}</CardDescription>
               </CardHeader>

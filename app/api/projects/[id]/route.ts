@@ -57,6 +57,14 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       progress: project.progress || 0,
       dueDate: project.endDate ? new Date(project.endDate).toISOString().split("T")[0] : "",
       startDate: project.startDate ? new Date(project.startDate).toISOString().split("T")[0] : "",
+      phases: Array.isArray(project.phases) ? project.phases.map((p: any) => ({
+        id: p._id.toString(),
+        phase: p.phase,
+        date: p.date,
+        description: p.description,
+        platform: p.platform,
+        status: p.status
+      })) : []
     }
 
     // Format tasks
