@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { ArrowLeft, RefreshCw, Calendar, Layers, Activity, Smartphone, Globe, Server, User, Pencil, Trash2, Check, X, Plus } from "lucide-react"
+import { ArrowLeft, RefreshCw, Calendar, Layers, Activity, Smartphone, Globe, Server, User, Pencil, Trash2, Check, X, Plus, Settings } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,13 @@ import {
 } from "@/components/ui/popover"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import { cn } from "@/lib/utils"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
 // import { format } from "date-fns" // Optional if we stick to native formatting for simplicity or match existing styles
 
 interface ProjectTrackerViewProps {
@@ -51,6 +58,18 @@ interface TrackerRow {
 
 export default function ProjectTrackerView({ projectId, onBack }: ProjectTrackerViewProps) {
     const { user } = useAuth()
+
+    // Detect if user is a guest (logged in with access code)
+    const [isGuest, setIsGuest] = useState(false)
+
+    useEffect(() => {
+        // Check if user is guest from localStorage
+        const userData = localStorage.getItem("user")
+        if (userData) {
+            const parsedUser = JSON.parse(userData)
+            setIsGuest(parsedUser.id?.startsWith("guest_") || false)
+        }
+    }, [user])
     const [project, setProject] = useState<Project | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -91,6 +110,12 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
 
     // State for editing
     const [editingId, setEditingId] = useState<string | null>(null)
+
+    // State for Settings Modal
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+    const [memberEmails, setMemberEmails] = useState<string[]>([''])
+    const [isPublishing, setIsPublishing] = useState(false)
+    const [publishStatus, setPublishStatus] = useState<{ type: 'success' | 'error', message: string } | null>(null)
 
     // Handlers for Editable Fields
     const handleTextChange = (id: string, field: keyof TrackerRow, value: string) => {
@@ -218,6 +243,89 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
         }
     }
 
+    // Member Email Management
+    const addEmailField = () => {
+        setMemberEmails([...memberEmails, ''])
+    }
+
+    const removeEmailField = (index: number) => {
+        setMemberEmails(memberEmails.filter((_, i) => i !== index))
+    }
+
+    const updateEmail = (index: number, value: string) => {
+        const updated = [...memberEmails]
+        updated[index] = value
+        setMemberEmails(updated)
+    }
+
+    // Handle Publish
+    const handlePublish = async () => {
+        // Filter out empty emails
+        const validEmails = memberEmails.filter(email => email.trim() !== '')
+
+        if (validEmails.length === 0) {
+            setPublishStatus({ type: 'error', message: 'Please add at least one email address' })
+            return
+        }
+
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+        const invalidEmails = validEmails.filter(email => !emailRegex.test(email))
+
+        if (invalidEmails.length > 0) {
+            setPublishStatus({
+                type: 'error',
+                message: `Invalid email format: ${invalidEmails.join(', ')}`
+            })
+            return
+        }
+
+        setIsPublishing(true)
+        setPublishStatus(null)
+
+        try {
+            const token = localStorage.getItem('token')
+            const response = await fetch(`/api/projects/${projectId}/publish`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ emails: validEmails })
+            })
+
+            const data = await response.json()
+
+            if (data.success) {
+                setPublishStatus({
+                    type: 'success',
+                    message: data.message || 'Invitations sent successfully!'
+                })
+                // Reset email fields after successful publish
+                setMemberEmails([''])
+
+                // Close modal after 2 seconds
+                setTimeout(() => {
+                    setIsSettingsOpen(false)
+                    setPublishStatus(null)
+                }, 2000)
+            } else {
+                setPublishStatus({
+                    type: 'error',
+                    message: data.error || data.message || 'Failed to send invitations'
+                })
+            }
+        } catch (error) {
+            console.error('Error publishing:', error)
+            setPublishStatus({
+                type: 'error',
+                message: 'Failed to send invitations. Please try again.'
+            })
+        } finally {
+            setIsPublishing(false)
+        }
+    }
+
     const getPlatformBadge = (platform: string) => {
         switch (platform) {
             case "Backend": return "bg-stone-100 text-stone-800 border border-stone-200"
@@ -254,10 +362,18 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
                         <h2 className="text-3xl font-brand font-bold text-foreground mb-2">{project?.name}</h2>
                         <p className="text-muted-foreground">{project?.description}</p>
                     </div>
-                    <Button onClick={fetchProjectDetails} variant="outline" size="sm">
-                        <RefreshCw className="w-4 h-4 mr-2" />
-                        Refresh
-                    </Button>
+                    {!isGuest && (
+                        <div className="flex gap-2">
+                            <Button onClick={fetchProjectDetails} variant="outline" size="sm">
+                                <RefreshCw className="w-4 h-4 mr-2" />
+                                Refresh
+                            </Button>
+                            <Button onClick={() => setIsSettingsOpen(true)} variant="outline" size="sm">
+                                <Settings className="w-4 h-4 mr-2" />
+                                Settings
+                            </Button>
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -284,7 +400,7 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
                                         <Activity size={14} /> Status
                                     </div>
                                 </th>
-                                <th className="px-6 py-4 font-semibold text-foreground text-right">Actions</th>
+                                {!isGuest && <th className="px-6 py-4 font-semibold text-foreground text-right">Actions</th>}
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
@@ -404,28 +520,30 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
                                                 </span>
                                             )}
                                         </td>
-                                        <td className="px-6 py-4 text-right">
-                                            <div className="flex items-center justify-end gap-2">
-                                                {editingId === row.id ? (
-                                                    <Button variant="ghost" size="icon" onClick={saveEditing} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
-                                                        <Check size={16} />
-                                                    </Button>
-                                                ) : (
-                                                    <Button variant="ghost" size="icon" onClick={() => startEditing(row.id)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-muted">
-                                                        <Pencil size={16} />
-                                                    </Button>
-                                                )}
+                                        {!isGuest && (
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    {editingId === row.id ? (
+                                                        <Button variant="ghost" size="icon" onClick={saveEditing} className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50">
+                                                            <Check size={16} />
+                                                        </Button>
+                                                    ) : (
+                                                        <Button variant="ghost" size="icon" onClick={() => startEditing(row.id)} className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-muted">
+                                                            <Pencil size={16} />
+                                                        </Button>
+                                                    )}
 
-                                                <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-red-50">
-                                                    <Trash2 size={16} />
-                                                </Button>
-                                            </div>
-                                        </td>
+                                                    <Button variant="ghost" size="icon" onClick={() => handleDelete(row.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-red-50">
+                                                        <Trash2 size={16} />
+                                                    </Button>
+                                                </div>
+                                            </td>
+                                        )}
                                     </tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={5} className="px-6 py-12 text-center text-muted-foreground">
+                                    <td colSpan={isGuest ? 5 : 6} className="px-6 py-12 text-center text-muted-foreground">
                                         No tracking data available yet.
                                     </td>
                                 </tr>
@@ -434,13 +552,116 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
                     </table>
                 </div>
                 {/* Add Phase Button Area */}
-                <div className="p-4 flex justify-end border-t border-border bg-muted/20">
-                    <Button onClick={addNewRow} className="bg-primary hover:bg-primary/90 text-white shadow-sm">
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add Phase
-                    </Button>
-                </div>
+                {!isGuest && (
+                    <div className="p-4 flex justify-end border-t border-border bg-muted/20">
+                        <Button onClick={addNewRow} className="bg-primary hover:bg-primary/90 text-white shadow-sm">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Add Phase
+                        </Button>
+                    </div>
+                )}
             </div>
+
+            {/* Settings Modal */}
+            <Dialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen}>
+                <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Project Settings</DialogTitle>
+                        <DialogDescription>
+                            Manage draft information and team member access for {project?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6 py-4">
+                        {/* Draft Information Section */}
+                        <div className="space-y-4">
+                            <h3 className="font-semibold text-lg text-foreground">Draft Information</h3>
+                            <div
+                                onClick={() => setIsSettingsOpen(false)}
+                                className="border rounded-lg p-6 bg-white hover:bg-muted/20 transition-colors cursor-pointer group"
+                            >
+                                {trackerData.length > 0 ? (
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm text-muted-foreground mb-1">Saved draft</p>
+                                            <p className="text-2xl font-bold text-foreground">
+                                                {trackerData.length} {trackerData.length === 1 ? 'Phase' : 'Phases'}
+                                            </p>
+                                        </div>
+                                        <div className="text-primary group-hover:translate-x-1 transition-transform">
+                                            <ArrowLeft className="w-5 h-5 rotate-180" />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <p className="text-muted-foreground text-center py-4">No draft data available</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Team Members Section */}
+                        <div className="space-y-4">
+                            <div className="flex justify-between items-center">
+                                <h3 className="font-semibold text-lg text-foreground">Team Members</h3>
+                                <Button onClick={addEmailField} variant="outline" size="sm">
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Add Member
+                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                {memberEmails.map((email, index) => (
+                                    <div key={index} className="flex gap-2">
+                                        <Input
+                                            type="email"
+                                            placeholder="member@example.com"
+                                            value={email}
+                                            onChange={(e) => updateEmail(index, e.target.value)}
+                                            className="flex-1"
+                                        />
+                                        {memberEmails.length > 1 && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => removeEmailField(index)}
+                                                className="text-destructive hover:text-destructive hover:bg-red-50"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Status Message */}
+                    {publishStatus && (
+                        <div className={`mx-6 mb-4 p-4 rounded-lg ${publishStatus.type === 'success'
+                            ? 'bg-green-50 border border-green-200 text-green-800'
+                            : 'bg-red-50 border border-red-200 text-red-800'
+                            }`}>
+                            <p className="text-sm font-medium">{publishStatus.message}</p>
+                        </div>
+                    )}
+
+                    {/* Footer Actions */}
+                    <div className="flex justify-end gap-2 pt-4 border-t mx-6 pb-6">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsSettingsOpen(false)}
+                            disabled={isPublishing}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handlePublish}
+                            disabled={isPublishing}
+                            className="bg-primary hover:bg-primary/90 text-white"
+                        >
+                            {isPublishing ? 'Sending...' : 'Publish'}
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }
