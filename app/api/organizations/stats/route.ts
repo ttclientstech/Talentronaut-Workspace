@@ -4,6 +4,7 @@ import Project from "@/lib/models/Project"
 import Task from "@/lib/models/Task"
 import User from "@/lib/models/User"
 import connectDB from "@/lib/db/mongodb"
+import Team from "@/lib/models/Team"
 
 export async function GET(request: NextRequest) {
     try {
@@ -18,6 +19,7 @@ export async function GET(request: NextRequest) {
         // Run queries in parallel for efficiency
         const [
             memberCount,
+            teamCount,
             projectCount,
             activeProjectsCount,
             taskCount,
@@ -27,6 +29,7 @@ export async function GET(request: NextRequest) {
             recentProjectsRaw
         ] = await Promise.all([
             User.countDocuments({}),
+            Team.countDocuments({}),
             Project.countDocuments({}),
             Project.countDocuments({ status: { $nin: ["Closed", "Not Started"] } }), // Defining Active as not closed or not started
             Task.countDocuments({}),
@@ -47,11 +50,6 @@ export async function GET(request: NextRequest) {
                 const totalTasks = await Task.countDocuments({ projectId: project._id })
                 const completedTasks = await Task.countDocuments({ projectId: project._id, status: "Done" })
                 const progress = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
-
-                // Determine status (simple mapping or stick to DB value if maintained correctly)
-                // Using DB value for speed, but could re-calculate if needed.
-                // The project/route.ts calculates status dynamically, let's trust the DB val for now or just return what we have.
-                // Actually, dashboard expects strings like "Active", "In Progress".
 
                 return {
                     id: project._id.toString(),
@@ -75,6 +73,7 @@ export async function GET(request: NextRequest) {
             },
             statistics: {
                 memberCount,
+                teamCount,
                 projectCount,
                 activeProjects: activeProjectsCount,
                 taskCount,

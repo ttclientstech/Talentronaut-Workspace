@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Loader2, Search } from "lucide-react"
 import { UserDialog } from "@/components/admin/user-dialog"
 import { CredentialsActions } from "@/components/admin/credentials-actions"
@@ -23,6 +24,7 @@ export default function AdminUsersView() {
     const [users, setUsers] = useState<User[]>([])
     const [loading, setLoading] = useState(true)
     const [search, setSearch] = useState("")
+    const [selectedRole, setSelectedRole] = useState<string>("all")
 
     const fetchUsers = async () => {
         setLoading(true)
@@ -43,10 +45,16 @@ export default function AdminUsersView() {
         fetchUsers()
     }, [])
 
-    const filteredUsers = users.filter(user =>
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase())
-    )
+    const filteredUsers = users.filter(user => {
+        const matchesSearch = user.name.toLowerCase().includes(search.toLowerCase()) ||
+            user.email.toLowerCase().includes(search.toLowerCase())
+        
+        if (selectedRole && selectedRole !== "all") {
+            return matchesSearch && user.role === selectedRole
+        }
+        
+        return matchesSearch
+    })
 
     return (
         <div className="p-6 space-y-6">
@@ -72,6 +80,17 @@ export default function AdminUsersView() {
                             onChange={(e) => setSearch(e.target.value)}
                             className="max-w-sm"
                         />
+                         <Select value={selectedRole} onValueChange={setSelectedRole}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filter by Role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Roles</SelectItem>
+                                <SelectItem value="Admin">Admin</SelectItem>
+                                <SelectItem value="Lead">Lead</SelectItem>
+                                <SelectItem value="Member">Member</SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </CardHeader>
                 <CardContent>

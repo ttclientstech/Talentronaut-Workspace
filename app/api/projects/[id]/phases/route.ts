@@ -19,7 +19,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
         const newPhase = {
             phase: body.phase || "New Phase",
             date: body.date || new Date().toLocaleDateString("en-GB"),
-            description: body.description || "Description",
+            description: body.description ?? "",
             platform: body.platform || "Backend",
             status: body.status || "Pending"
         }
