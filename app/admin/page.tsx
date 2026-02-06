@@ -18,10 +18,12 @@ import ProtectedRoute from "@/components/protected-route"
 import ProjectTrackerView from "@/components/project-tracker-view"
 import { useAuth } from "@/lib/auth-context"
 import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
+import { LogOut, FileText } from "lucide-react"
 import AdminUsersView from "@/components/admin-users-view"
 import PasswordsView from "@/components/passwords-view"
 import { UserSettingsDialog } from "@/components/user-settings-dialog"
+import LetterHeadView from "@/components/letterhead-view"
+import OthersView from "@/components/others-view"
 
 export default function AdminPage() {
   return (
@@ -34,7 +36,7 @@ export default function AdminPage() {
 function AdminPageContent() {
   const { user, logout } = useAuth()
   const [currentView, setCurrentView] = useState<
-    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords" | "project-tracker"
+    "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords" | "project-tracker" | "letterhead" | "others"
   >("dashboard")
   const [selectedProject, setSelectedProject] = useState<string | null>(null)
   const [isCreateProjectOpen, setIsCreateProjectOpen] = useState(false)
@@ -53,7 +55,7 @@ function AdminPageContent() {
   }
 
   const handleViewChange = (
-    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords" | "project-tracker",
+    view: "dashboard" | "projects" | "tasks" | "members" | "my-tasks" | "schedule" | "skills" | "users" | "passwords" | "project-tracker" | "letterhead" | "others",
   ) => {
     setCurrentView(view)
   }
@@ -153,6 +155,19 @@ function AdminPageContent() {
           >
             My Skills
           </button>
+
+          <div className="mt-6 mb-2 px-4 py-2">
+            <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest font-mono">Other</p>
+          </div>
+          <button
+            onClick={() => handleViewChange("others")}
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "others"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
+              }`}
+          >
+            Other Tools
+          </button>
         </div>
 
         <div className="mt-auto p-6 border-t border-white/10">
@@ -205,6 +220,8 @@ function AdminPageContent() {
         )}
         {currentView === "members" && <TeamsView onViewChange={handleViewChange} />}
         {currentView === "passwords" && <PasswordsView />}
+        {currentView === "letterhead" && <LetterHeadView onBack={() => setCurrentView("others")} />}
+        {currentView === "others" && <OthersView onViewChange={handleViewChange} />}
       </main>
 
       {/* Modals */}
