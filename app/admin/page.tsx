@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import Dashboard from "@/components/dashboard"
 import ProjectsView from "@/components/projects-view"
 import AdminTasksView from "@/components/admin-tasks-view"
-import MembersView from "@/components/members-view"
+import TeamsView from "@/components/teams-view"
 
 import MyTasksView from "@/components/my-tasks-view"
 import MyScheduleView from "@/components/my-schedule-view"
@@ -96,6 +96,15 @@ function AdminPageContent() {
             <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest font-mono">Team</p>
           </div>
           <button
+            onClick={() => handleViewChange("members")}
+            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "members"
+              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
+              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
+              }`}
+          >
+            Teams
+          </button>
+          <button
             onClick={() => handleViewChange("users")}
             className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "users"
               ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
@@ -103,15 +112,6 @@ function AdminPageContent() {
               }`}
           >
             User Management
-          </button>
-          <button
-            onClick={() => handleViewChange("members")}
-            className={`w-full text-left px-5 py-3.5 rounded-full transition-all duration-300 font-medium text-sm flex items-center gap-3 group ${currentView === "members"
-              ? "bg-white text-[#D4503A] shadow-lg shadow-black/10 font-bold translate-x-1"
-              : "text-white/80 hover:bg-white/10 hover:text-white hover:translate-x-1"
-              }`}
-          >
-            Members
           </button>
 
           <div className="mt-6 mb-2 px-4 py-2">
@@ -203,7 +203,7 @@ function AdminPageContent() {
             onBack={() => setCurrentView("projects")}
           />
         )}
-        {currentView === "members" && <MembersView onViewChange={handleViewChange} />}
+        {currentView === "members" && <TeamsView onViewChange={handleViewChange} />}
         {currentView === "passwords" && <PasswordsView />}
       </main>
 

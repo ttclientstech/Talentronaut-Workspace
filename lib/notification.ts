@@ -29,7 +29,7 @@ export async function sendEmail(to: string, subject: string, message: string, ht
     }
 
     const params = {
-        Source: "credentials@talentronaut.in",
+        Source: "credentials@linksus.in",
         Destination: {
             ToAddresses: [to],
         },

@@ -31,6 +31,7 @@ interface DashboardStats {
   };
   statistics: {
     memberCount: number;
+    teamCount: number;
     projectCount: number;
     activeProjects: number;
     taskCount: number;
@@ -120,17 +121,17 @@ export default function Dashboard({
             <div className="absolute top-6 right-6 p-2 bg-accent/10 rounded-2xl group-hover:bg-accent group-hover:text-accent-foreground transition-colors duration-300">
               <Users className="w-5 h-5 text-accent-foreground/70 group-hover:text-accent-foreground transition-colors" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Team</p>
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider mb-2">Teams</p>
             {isLoading ? (
               <Skeleton className="h-12 w-20 mb-1" />
             ) : (
               <div className="flex items-baseline gap-2">
                 <h3 className="text-5xl font-brand font-medium text-foreground">
-                  {stats?.statistics.memberCount || 0}
+                  {stats?.statistics.teamCount || 0}
                 </h3>
               </div>
             )}
-            <p className="text-xs text-muted-foreground mt-2 font-medium">Members Enrolled</p>
+            <p className="text-xs text-muted-foreground mt-2 font-medium">Active Teams</p>
           </div>
 
           <div

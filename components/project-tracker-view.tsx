@@ -207,7 +207,7 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
             const newPhaseData = {
                 phase: "Phase 1.1",
                 date: new Date().toLocaleDateString("en-GB"),
-                description: "New Task Description",
+                description: "",
                 platform: "Backend",
                 status: "Pending"
             }
@@ -469,7 +469,8 @@ export default function ProjectTrackerView({ projectId, onBack }: ProjectTracker
                                                 <Input
                                                     value={row.description}
                                                     onChange={(e) => handleTextChange(row.id, "description", e.target.value)}
-                                                    className="h-8 w-full"
+                                                    placeholder="Task Description"
+                                                    className="h-8 w-full focus:placeholder-transparent"
                                                 />
                                             ) : (
                                                 row.description
