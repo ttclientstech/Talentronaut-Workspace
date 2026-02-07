@@ -2,7 +2,7 @@
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { FileText, ArrowRight } from "lucide-react"
+import { FileText, ArrowRight, Receipt } from "lucide-react"
 
 interface OthersViewProps {
     onViewChange: (view: "letterhead") => void
@@ -26,6 +26,22 @@ export default function OthersView({ onViewChange }: OthersViewProps) {
                     <h3 className="text-xl font-bold text-gray-800 mb-2">Letterhead</h3>
                     <p className="text-sm text-gray-500 mb-6 leading-relaxed">
                         Create professional documents with company branding. Write, edit, and print directly from the workspace.
+                    </p>
+
+                    <div className="flex items-center text-[#D4503A] font-semibold text-sm group-hover:translate-x-1 transition-transform duration-300">
+                        Open Tool <ArrowRight className="w-4 h-4 ml-2" />
+                    </div>
+                </Card>
+
+                {/* Invoice Tool Card */}
+                <Card className="p-6 hover:shadow-lg transition-all duration-300 border-none shadow-md bg-white group cursor-pointer" onClick={() => window.open('https://invoice.talentronaut.in/login', '_blank')}>
+                    <div className="h-12 w-12 rounded-xl bg-[#D4503A]/10 text-[#D4503A] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform duration-300">
+                        <Receipt className="w-6 h-6" />
+                    </div>
+
+                    <h3 className="text-xl font-bold text-gray-800 mb-2">Invoices & Proposals</h3>
+                    <p className="text-sm text-gray-500 mb-6 leading-relaxed">
+                        Generate and manage professional invoices, quotations, and project proposals in one place.
                     </p>
 
                     <div className="flex items-center text-[#D4503A] font-semibold text-sm group-hover:translate-x-1 transition-transform duration-300">
