@@ -47,7 +47,7 @@ Best Regards,
         contact: "+91 8220324802 |support@talentronaut.in",
         cin: "U85499MH2024PTC421338",
         gstin: "27AAKCT8463F1ZW",
-        msme: "UDYAM-MH-04-0177043"
+
     }
 
     const handlePrint = () => {
@@ -377,26 +377,33 @@ Best Regards,
 function LetterheadHeader({ companyDetails }: { companyDetails: any }) {
     return (
         <div className="w-full bg-white pb-6 pt-10 px-16 border-b border-gray-100">
-            <div className="flex justify-between items-end mb-4">
-                <div className="flex flex-col">
-                    <h1 className="text-5xl font-black text-[#D4503A] tracking-tighter" style={{ fontFamily: 'Inter, sans-serif' }}>
-                        Talentronaut
-                    </h1>
-                    <p className="text-[11px] text-gray-400 font-bold tracking-[0.3em] uppercase mt-2 ml-1">Workspace</p>
-                </div>
-                <div className="text-right space-y-2">
-                    <p className="font-bold text-gray-900 text-base">{companyDetails.name}</p>
-                    <p className="text-sm text-gray-500 font-medium">{companyDetails.address}</p>
-                    <div className="flex items-center justify-end gap-2 text-sm text-gray-500">
-                        <span>{companyDetails.contact}</span>
+            <div className="flex justify-between items-start mb-6">
+                <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-4">
+                        {/* Logo Adjustment */}
+                        <div className="w-12 h-12 relative">
+                            <img src="/logo.svg" alt="Talentronaut" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="flex flex-col justify-center">
+                            <h1 className="text-3xl text-[#D4503A] tracking-tighter leading-none" style={{ fontFamily: 'Bochan, sans-serif' }}>
+                                Talentronaut
+                            </h1>
+                        </div>
                     </div>
+                    <p className="text-xs text-gray-500 font-medium pl-1">{companyDetails.contact}</p>
+                </div>
+                <div className="text-right space-y-1 max-w-[50%]">
+                    <p className="font-bold text-gray-900 text-sm leading-tight">{companyDetails.name}</p>
+                    <p className="text-xs text-gray-500 font-medium leading-relaxed mt-1">
+                        {companyDetails.address}
+                    </p>
                 </div>
             </div>
 
             <div className="w-full bg-gray-50 border-y border-gray-100 px-4 py-3 flex justify-between items-center text-[9px] text-gray-500 uppercase tracking-widest font-semibold rounded-sm">
                 <span>CIN: {companyDetails.cin}</span>
+
                 <span>GSTIN: {companyDetails.gstin}</span>
-                <span>MSME: {companyDetails.msme}</span>
             </div>
         </div>
     )
@@ -406,11 +413,7 @@ function LetterheadFooter({ pageNum }: { pageNum: number }) {
     return (
         <div className="w-full bg-white px-16 pb-12 pt-4 mt-auto">
             <div className="border-t-2 border-[#D4503A] pt-8 flex flex-col items-center gap-6">
-                <div className="flex gap-10 text-xs font-bold text-gray-400 tracking-widest uppercase">
-                    <a href="https://www.linkedin.com/company/talentronaut-technologies-private-limited/posts/?feedView=all" className="hover:text-[#D4503A] transition-colors duration-300">LinkedIn</a>
-                    <a href="https://www.instagram.com/talentronaut/" className="hover:text-[#D4503A] transition-colors duration-300">Instagram</a>
 
-                </div>
                 <div className="flex w-full justify-between items-end text-[10px] text-gray-400 font-medium">
                     <div className="w-1/3 text-left">
                         &copy; {new Date().getFullYear()} Talentronaut. All rights reserved.
