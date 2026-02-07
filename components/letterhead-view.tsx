@@ -385,8 +385,8 @@ function LetterheadHeader({ companyDetails }: { companyDetails: any }) {
                             <img src="/logo.svg" alt="Talentronaut" className="w-full h-full object-contain" />
                         </div>
                         <div className="flex flex-col justify-center">
-                            <h1 className="text-3xl text-[#D4503A] tracking-tighter leading-none" style={{ fontFamily: 'Bochan, sans-serif' }}>
-                                Talentronaut
+                            <h1 className="text-3xl tracking-tighter leading-none" style={{ fontFamily: 'Bochan, sans-serif' }}>
+                                <span className="text-[#D4503A]">Talent</span><span className="text-[#4A4A46]">ronaut</span>
                             </h1>
                         </div>
                     </div>
