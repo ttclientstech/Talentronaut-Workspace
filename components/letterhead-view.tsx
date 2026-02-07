@@ -8,7 +8,7 @@ interface LetterHeadViewProps {
     onBack?: () => void
 }
 
-const MAX_LINES_PER_PAGE = 20
+const MAX_LINES_PER_PAGE = 27
 
 export default function LetterHeadView({ onBack }: LetterHeadViewProps) {
     const [isEditing, setIsEditing] = useState(true)
@@ -42,12 +42,12 @@ Best Regards,
 
     // Company details
     const companyDetails = {
-        name: "Talentronaut Technologies",
-        address: "Pune, Maharashtra, India",
-        contact: "+91-XXXXXXXXXX | contact@talentronaut.in",
-        cin: "U72900PN2023PTCXXXXXX",
-        gstin: "27XXXXX1234X1Z5",
-        msme: "UDYAM-MH-XX-XXXXXXX"
+        name: "Talentronaut Technologies Pvt. Ltd",
+        address: "5-49, Maharaja Garden, Bajanai Kovil St, Andavar Nagar, Ramapuram, Chennai, Tamil Nadu 600089",
+        contact: "+91 8220324802 |support@talentronaut.in",
+        cin: "U85499MH2024PTC421338",
+        gstin: "27AAKCT8463F1ZW",
+        msme: "UDYAM-MH-04-0177043"
     }
 
     const handlePrint = () => {
@@ -174,39 +174,7 @@ Best Regards,
     }, [fullContent])
 
 
-    // Update content when a specific page edits
-    const handlePageEdit = (pageIndex: number, newPageContent: string) => {
-        // 1. Get current pages state (or reconstruct from fullContent to be safe)
-        // Ideally we use the derived `pages` state if it's in sync, but better to use the current `fullContent` source.
 
-        // Actually, since we render separate textareas, passing `value={pages[i].join('\n')}` is correct.
-        // When user types, we get a new string for that page with potentially MORE lines than allowed.
-        // We just merge EVERYTHING back into one big string and let the useEffect re-chunk it.
-
-        const currentLines = fullContent.split('\n')
-
-        // The lines belonging to this page start at:
-        const startIndex = pageIndex * MAX_LINES_PER_PAGE
-
-        // The lines currently in this page (before edit) end at:
-        // const endIndex = Math.min(startIndex + MAX_LINES_PER_PAGE, currentLines.length)
-
-        // Construct the new full content:
-        // Everything before this page + New Page Content + Everything after this page
-
-        // Wait! "Everything after this page" is tricky because the indices shift.
-        // Safer approach:
-        // We know `pages` state. We can reconstruct `fullContent` from `pages` array, but replacing the modified page.
-
-        const updatedPages = [...pages]
-        // We split the new textarea content by newline to get the raw lines
-        const newPageLines = newPageContent.split('\n')
-        updatedPages[pageIndex] = newPageLines
-
-        // Flatten to get new fullContent
-        const newFullContent = updatedPages.flat().join('\n')
-        setFullContent(newFullContent)
-    }
 
 
     // Simple Markdown Renderer
@@ -255,53 +223,66 @@ Best Regards,
             </div>
 
             {/* Main Workspace */}
-            <div className={`flex-1 overflow-y-auto no-scroll-print flex justify-center pb-20`}>
+            <div className={`flex-1 overflow-y-auto no-scroll-print flex justify-center pb-20 print:pb-0 print-content`}>
                 <div className="flex flex-col gap-8 print:gap-0">
 
-                    {/* RENDER PAGES LOOP */}
-                    {pages.map((pageLines, pageIndex) => (
-                        <div key={pageIndex} className="a4-page bg-white shadow-2xl relative print:shadow-none transition-all duration-300 h-[297mm] flex flex-col justify-between group">
+                    {isEditing ? (
+                        /* EDIT MODE: Single Continuous Page */
+                        <div className="a4-page bg-white shadow-2xl relative print:shadow-none transition-all duration-300 min-h-[297mm] flex flex-col justify-between group">
 
-                            {/* Watermark (Common for both modes) */}
+                            {/* Watermark */}
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
                                 <div className="w-[450px] h-[450px] flex items-center justify-center opacity-[0.04] mix-blend-multiply">
                                     <img src="/logo.svg" alt="" className="w-full grayscale contrast-125" />
                                 </div>
                             </div>
 
-                            {/* Content Layer (z-10) */}
-                            <div className="relative z-10 flex flex-col h-full justify-between">
+                            {/* Content Layer */}
+                            <div className="relative z-10 flex flex-col min-h-[297mm]">
                                 <LetterheadHeader companyDetails={companyDetails} />
 
-                                <div className="flex-1 px-16 py-4 relative">
-                                    {isEditing ? (
-                                        // EDIT MODE: Textarea for this page slice
-                                        <textarea
-                                            value={pageLines.join('\n')}
-                                            onChange={(e) => handlePageEdit(pageIndex, e.target.value)}
-                                            className="w-full h-full resize-none outline-none border-none bg-transparent font-serif text-gray-800 text-lg leading-loose placeholder:text-gray-300 selection:bg-[#D4503A]/20"
-                                            placeholder={pageIndex === 0 ? "Start typing your letter content here..." : ""}
-                                            spellCheck={false}
-                                        />
-                                    ) : (
-                                        // PREVIEW MODE: Markdown Rendering
-                                        <div className="overflow-hidden">
-                                            {pageLines.map((line, i) => renderMarkdownLine(line, i))}
-                                        </div>
-                                    )}
-
-                                    {/* Visual Indicator of Line Count in Edit Mode */}
-                                    {isEditing && (
-                                        <div className="absolute bottom-2 right-16 text-[10px] text-gray-300 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            {pageLines.length} / {MAX_LINES_PER_PAGE} lines
-                                        </div>
-                                    )}
+                                <div className="flex-1 px-16 py-4 relative flex flex-col">
+                                    <textarea
+                                        value={fullContent}
+                                        onChange={(e) => setFullContent(e.target.value)}
+                                        className="w-full flex-1 resize-none outline-none border-none bg-transparent font-serif text-gray-800 text-lg leading-loose placeholder:text-gray-300 selection:bg-[#D4503A]/20 min-h-[500px]"
+                                        placeholder="Start typing your letter content here..."
+                                        spellCheck={false}
+                                    />
                                 </div>
 
-                                <LetterheadFooter pageNum={pageIndex + 1} />
+                                <LetterheadFooter pageNum={1} />
                             </div>
                         </div>
-                    ))}
+                    ) : (
+                        /* PREVIEW MODE: Paginated Pages */
+                        <>
+                            {pages.map((pageLines, pageIndex) => (
+                                <div key={pageIndex} className="a4-page bg-white shadow-2xl relative print:shadow-none transition-all duration-300 h-[297mm] flex flex-col justify-between group">
+
+                                    {/* Watermark */}
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+                                        <div className="w-[450px] h-[450px] flex items-center justify-center opacity-[0.04] mix-blend-multiply">
+                                            <img src="/logo.svg" alt="" className="w-full grayscale contrast-125" />
+                                        </div>
+                                    </div>
+
+                                    {/* Content Layer */}
+                                    <div className="relative z-10 flex flex-col h-full justify-between">
+                                        <LetterheadHeader companyDetails={companyDetails} />
+
+                                        <div className="flex-1 px-16 py-4 relative">
+                                            <div className="overflow-hidden">
+                                                {pageLines.map((line, i) => renderMarkdownLine(line, i))}
+                                            </div>
+                                        </div>
+
+                                        <LetterheadFooter pageNum={pageIndex + 1} />
+                                    </div>
+                                </div>
+                            ))}
+                        </>
+                    )}
 
                 </div>
             </div>
@@ -312,26 +293,49 @@ Best Regards,
           min-height: 297mm;
           margin: 0 auto;
           background: white;
-          /* Ensure break-after for printing */
           break-after: page;
         }
 
         @media print {
           @page {
-            size: A4;
-            margin: 0; /* We handle margins manually */
+            size: A4 portrait;
+            margin: 0;
+          }
+
+          html, body {
+            width: 210mm;
+            height: auto !important;
+            min-height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: visible !important;
           }
           
           body {
              visibility: hidden;
           }
           
+          /* Reset the flex container that holds the pages */
+          .print-content {
+             display: block !important; /* Disable flex */
+             height: auto !important;
+             overflow: visible !important;
+             position: static !important;
+          }
+
+          /* Ensure the container behaves */
           .letterhead-container {
              visibility: visible;
              position: absolute;
              top: 0;
              left: 0;
-             width: 100%;
+             width: 210mm;
+             height: auto !important;
+             margin: 0;
+             padding: 0;
+             background: white;
+             overflow: visible !important;
+             display: block !important;
           }
 
           .letterhead-container * {
@@ -346,14 +350,22 @@ Best Regards,
           .a4-page {
              box-shadow: none !important;
              margin: 0 !important;
-             width: 100% !important;
-             height: 297mm !important; /* Force height */
-             page-break-after: always; /* Force break */
+             width: 210mm !important;
+             height: 296mm !important; /* Keep page height fixed per page */
+             page-break-after: always;
+             break-after: page;
+             overflow: hidden;
+             print-color-adjust: exact;
+             -webkit-print-color-adjust: exact;
+             position: relative;
           }
           
           /* Fix for last page empty sheet */
           .a4-page:last-child {
              page-break-after: auto;
+             break-after: auto;
+             height: 296mm !important; /* Force standard height so footer stays at bottom */
+             min-height: 296mm;
           }
         }
       `}</style>
@@ -383,9 +395,7 @@ function LetterheadHeader({ companyDetails }: { companyDetails: any }) {
 
             <div className="w-full bg-gray-50 border-y border-gray-100 px-4 py-3 flex justify-between items-center text-[9px] text-gray-500 uppercase tracking-widest font-semibold rounded-sm">
                 <span>CIN: {companyDetails.cin}</span>
-                <span className="text-gray-300">•</span>
                 <span>GSTIN: {companyDetails.gstin}</span>
-                <span className="text-gray-300">•</span>
                 <span>MSME: {companyDetails.msme}</span>
             </div>
         </div>
@@ -397,9 +407,9 @@ function LetterheadFooter({ pageNum }: { pageNum: number }) {
         <div className="w-full bg-white px-16 pb-12 pt-4 mt-auto">
             <div className="border-t-2 border-[#D4503A] pt-8 flex flex-col items-center gap-6">
                 <div className="flex gap-10 text-xs font-bold text-gray-400 tracking-widest uppercase">
-                    <a href="#" className="hover:text-[#D4503A] transition-colors duration-300">LinkedIn</a>
-                    <a href="#" className="hover:text-[#D4503A] transition-colors duration-300">Instagram</a>
-                    <a href="#" className="hover:text-[#D4503A] transition-colors duration-300">Twitter</a>
+                    <a href="https://www.linkedin.com/company/talentronaut-technologies-private-limited/posts/?feedView=all" className="hover:text-[#D4503A] transition-colors duration-300">LinkedIn</a>
+                    <a href="https://www.instagram.com/talentronaut/" className="hover:text-[#D4503A] transition-colors duration-300">Instagram</a>
+
                 </div>
                 <div className="flex w-full justify-between items-end text-[10px] text-gray-400 font-medium">
                     <div className="w-1/3 text-left">
